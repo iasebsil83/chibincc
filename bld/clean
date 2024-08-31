@@ -1,0 +1,19 @@
+#!/bin/bash
+
+
+
+# -------- DECLARATIONS --------
+
+#current execution directory
+CXD=$(dirname $(realpath $0))
+pCXD=$(dirname $CXD)
+
+
+
+
+
+
+# -------- EXECUTION --------
+
+#remove temporary generated files
+rm --force $pCXD/out/tmp/*.o

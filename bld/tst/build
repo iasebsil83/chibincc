@@ -1,0 +1,139 @@
+cc -std=c11 -g -fno-common -Wall -Wno-switch   -c -o strings.o strings.c
+cc -std=c11 -g -fno-common -Wall -Wno-switch   -c -o tokenize.o tokenize.c
+cc -std=c11 -g -fno-common -Wall -Wno-switch   -c -o hashmap.o hashmap.c
+cc -std=c11 -g -fno-common -Wall -Wno-switch   -c -o type.o type.c
+cc -std=c11 -g -fno-common -Wall -Wno-switch   -c -o main.o main.c
+cc -std=c11 -g -fno-common -Wall -Wno-switch   -c -o parse.o parse.c
+cc -std=c11 -g -fno-common -Wall -Wno-switch   -c -o codegen.o codegen.c
+cc -std=c11 -g -fno-common -Wall -Wno-switch   -c -o preprocess.o preprocess.c
+cc -std=c11 -g -fno-common -Wall -Wno-switch   -c -o unicode.o unicode.c
+cc -std=c11 -g -fno-common -Wall -Wno-switch -o chibicc strings.o tokenize.o hashmap.o type.o main.o parse.o codegen.o preprocess.o unicode.o 
+
+./chibicc -Iinclude -Itest -c -o test/decl.o test/decl.c
+cc -pthread -o test/decl.exe test/decl.o -xc test/common
+
+./chibicc -Iinclude -Itest -c -o test/string.o test/string.c
+cc -pthread -o test/string.exe test/string.o -xc test/common
+
+./chibicc -Iinclude -Itest -c -o test/vla.o test/vla.c
+cc -pthread -o test/vla.exe test/vla.o -xc test/common
+
+./chibicc -Iinclude -Itest -c -o test/atomic.o test/atomic.c
+cc -pthread -o test/atomic.exe test/atomic.o -xc test/common
+
+./chibicc -Iinclude -Itest -c -o test/const.o test/const.c
+cc -pthread -o test/const.exe test/const.o -xc test/common
+
+./chibicc -Iinclude -Itest -c -o test/struct.o test/struct.c
+cc -pthread -o test/struct.exe test/struct.o -xc test/common
+
+./chibicc -Iinclude -Itest -c -o test/extern.o test/extern.c
+cc -pthread -o test/extern.exe test/extern.o -xc test/common
+
+./chibicc -Iinclude -Itest -c -o test/offsetof.o test/offsetof.c
+cc -pthread -o test/offsetof.exe test/offsetof.o -xc test/common
+
+./chibicc -Iinclude -Itest -c -o test/varargs.o test/varargs.c
+cc -pthread -o test/varargs.exe test/varargs.o -xc test/common
+
+./chibicc -Iinclude -Itest -c -o test/typedef.o test/typedef.c
+cc -pthread -o test/typedef.exe test/typedef.o -xc test/common
+
+./chibicc -Iinclude -Itest -c -o test/literal.o test/literal.c
+cc -pthread -o test/literal.exe test/literal.o -xc test/common
+
+./chibicc -Iinclude -Itest -c -o test/complit.o test/complit.c
+cc -pthread -o test/complit.exe test/complit.o -xc test/common
+
+./chibicc -Iinclude -Itest -c -o test/asm.o test/asm.c
+cc -pthread -o test/asm.exe test/asm.o -xc test/common
+
+./chibicc -Iinclude -Itest -c -o test/sizeof.o test/sizeof.c
+cc -pthread -o test/sizeof.exe test/sizeof.o -xc test/common
+
+./chibicc -Iinclude -Itest -c -o test/cast.o test/cast.c
+cc -pthread -o test/cast.exe test/cast.o -xc test/common
+
+./chibicc -Iinclude -Itest -c -o test/generic.o test/generic.c
+cc -pthread -o test/generic.exe test/generic.o -xc test/common
+
+./chibicc -Iinclude -Itest -c -o test/alignof.o test/alignof.c
+cc -pthread -o test/alignof.exe test/alignof.o -xc test/common
+
+./chibicc -Iinclude -Itest -c -o test/tls.o test/tls.c
+cc -pthread -o test/tls.exe test/tls.o -xc test/common
+
+./chibicc -Iinclude -Itest -c -o test/builtin.o test/builtin.c
+cc -pthread -o test/builtin.exe test/builtin.o -xc test/common
+
+./chibicc -Iinclude -Itest -c -o test/pointer.o test/pointer.c
+cc -pthread -o test/pointer.exe test/pointer.o -xc test/common
+
+./chibicc -Iinclude -Itest -c -o test/enum.o test/enum.c
+cc -pthread -o test/enum.exe test/enum.o -xc test/common
+
+./chibicc -Iinclude -Itest -c -o test/commonsym.o test/commonsym.c
+cc -pthread -o test/commonsym.exe test/commonsym.o -xc test/common
+
+./chibicc -Iinclude -Itest -c -o test/macro.o test/macro.c
+cc -pthread -o test/macro.exe test/macro.o -xc test/common
+
+./chibicc -Iinclude -Itest -c -o test/float.o test/float.c
+cc -pthread -o test/float.exe test/float.o -xc test/common
+
+./chibicc -Iinclude -Itest -c -o test/function.o test/function.c
+cc -pthread -o test/function.exe test/function.o -xc test/common
+
+./chibicc -Iinclude -Itest -c -o test/compat.o test/compat.c
+cc -pthread -o test/compat.exe test/compat.o -xc test/common
+
+./chibicc -Iinclude -Itest -c -o test/bitfield.o test/bitfield.c
+cc -pthread -o test/bitfield.exe test/bitfield.o -xc test/common
+
+./chibicc -Iinclude -Itest -c -o test/constexpr.o test/constexpr.c
+cc -pthread -o test/constexpr.exe test/constexpr.o -xc test/common
+
+./chibicc -Iinclude -Itest -c -o test/attribute.o test/attribute.c
+cc -pthread -o test/attribute.exe test/attribute.o -xc test/common
+
+./chibicc -Iinclude -Itest -c -o test/arith.o test/arith.c
+cc -pthread -o test/arith.exe test/arith.o -xc test/common
+
+./chibicc -Iinclude -Itest -c -o test/pragma-once.o test/pragma-once.c
+cc -pthread -o test/pragma-once.exe test/pragma-once.o -xc test/common
+
+./chibicc -Iinclude -Itest -c -o test/usualconv.o test/usualconv.c
+cc -pthread -o test/usualconv.exe test/usualconv.o -xc test/common
+
+./chibicc -Iinclude -Itest -c -o test/variable.o test/variable.c
+cc -pthread -o test/variable.exe test/variable.o -xc test/common
+
+./chibicc -Iinclude -Itest -c -o test/line.o test/line.c
+cc -pthread -o test/line.exe test/line.o -xc test/common
+
+./chibicc -Iinclude -Itest -c -o test/alloca.o test/alloca.c
+cc -pthread -o test/alloca.exe test/alloca.o -xc test/common
+
+./chibicc -Iinclude -Itest -c -o test/typeof.o test/typeof.c
+cc -pthread -o test/typeof.exe test/typeof.o -xc test/common
+
+./chibicc -Iinclude -Itest -c -o test/unicode.o test/unicode.c
+cc -pthread -o test/unicode.exe test/unicode.o -xc test/common
+
+./chibicc -Iinclude -Itest -c -o test/stdhdr.o test/stdhdr.c
+cc -pthread -o test/stdhdr.exe test/stdhdr.o -xc test/common
+
+./chibicc -Iinclude -Itest -c -o test/initializer.o test/initializer.c
+cc -pthread -o test/initializer.exe test/initializer.o -xc test/common
+
+./chibicc -Iinclude -Itest -c -o test/control.o test/control.c
+cc -pthread -o test/control.exe test/control.o -xc test/common
+
+./chibicc -Iinclude -Itest -c -o test/union.o test/union.c
+cc -pthread -o test/union.exe test/union.o -xc test/common
+
+for i in test/decl.exe test/string.exe test/vla.exe test/atomic.exe test/const.exe test/struct.exe test/extern.exe test/offsetof.exe test/varargs.exe test/typedef.exe test/literal.exe test/complit.exe test/asm.exe test/sizeof.exe test/cast.exe test/generic.exe test/alignof.exe test/tls.exe test/builtin.exe test/pointer.exe test/enum.exe test/commonsym.exe test/macro.exe test/float.exe test/function.exe test/compat.exe test/bitfield.exe test/constexpr.exe test/attribute.exe test/arith.exe test/pragma-once.exe test/usualconv.exe test/variable.exe test/line.exe test/alloca.exe test/typeof.exe test/unicode.exe test/stdhdr.exe test/initializer.exe test/control.exe test/union.exe; do
+	echo $i
+	./$i || exit 1
+	echo
+done

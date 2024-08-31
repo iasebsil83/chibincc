@@ -1,0 +1,20 @@
+#!/bin/bash
+
+
+
+# -------- DECLARATIONS --------
+
+#current execution directory
+CXD=$(dirname $(realpath $0))
+pCXD=$(dirname $CXD)
+
+
+
+
+
+
+# -------- EXECUTION --------
+
+#build & clean
+$CXD/build
+$CXD/clean

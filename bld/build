@@ -1,0 +1,59 @@
+#!/bin/bash
+
+
+
+# -------- DECLARATIONS --------
+
+#current execution directory
+CXD=$(dirname $(realpath $0))
+pCXD=$(dirname $CXD)
+
+#input/output
+SRC=$pCXD/src
+TMP=$pCXD/out/tmp
+APP=$pCXD/out/app
+
+#get into main project directory
+cd $pCXD
+
+
+
+
+
+
+# -------- TOOLS --------
+
+#mkdir_ifnotexist <<<<<<<<<<<<<<<<<<<<< should be an STDZ function
+function mkdir_ifnotexist() {
+	for a in $@; do
+		if [[ ! -d $a ]]; then
+			mkdir $a
+		fi
+	done
+}
+
+
+
+
+
+
+# -------- EXECUTION --------
+
+#clean previous generation
+if [[ -f $APP/chibicc ]]; then
+	rm $APP/chibicc
+fi
+mkdir_ifnotexist $pCXD/out $TMP $APP
+
+#dependencies compilation
+for n in strings tokenize hashmap type main parse codegen preprocess unicode; do
+	if [[ ! -f $TMP/$n.o ]]; then
+		cc -std=c11 -g -fno-common -Wall -Wno-switch -c -o $TMP/$n.o $SRC/$n.c
+	fi
+done
+
+#main program compilation
+cc -std=c11 -g -fno-common -Wall -Wno-switch -o $APP/chibicc \
+	$TMP/strings.o $TMP/tokenize.o   $TMP/hashmap.o \
+	$TMP/type.o    $TMP/main.o       $TMP/parse.o   \
+	$TMP/codegen.o $TMP/preprocess.o $TMP/unicode.o

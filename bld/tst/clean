@@ -1,0 +1,22 @@
+#!/bin/bash
+
+
+
+# -------- DECLARATIONS --------
+
+#current execution directory
+CXD=$(dirname $(realpath $0))
+pCXD=$(dirname $CXD)
+
+
+
+
+
+
+# -------- EXECUTION --------
+
+#get into test directory
+cd $pCXD/tst
+
+#remove generated files
+rm *.exe *.s stage2
