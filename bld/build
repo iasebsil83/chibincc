@@ -49,14 +49,22 @@ if [[ -f $APP/chibicc ]]; then
 fi
 mkdir_ifnotexist $pCXD/out $TMP $APP
 
+#compile using external CC
+echo "Compiling an instance using external CC..."
+rm --recursive --force        $TMP/chibicc_ext
+git clone -b external_cc .git $TMP/chibicc_ext
+cd                            $TMP/chibicc_ext
+bld/install
+cd $pCXD
+
 #dependencies compilation
-echo "Compiling dependencies..."
+echo "Compiling dependencies using the freshly generated instance..."
 for n in strings tokenize hashmap type main parse codegen preprocess unicode; do
-	cc -std=c11 -g -fno-common -Wall -Wno-switch -c -o $TMP/$n.o $SRC/$n.c
+	$TMP/chibicc_ext/app/chibicc -o $TMP/$n.o $SRC/$n.c
 done
 
 #main program compilation
-echo "Compiling final executable..."
+echo "Compiling final executable using the freshly generated instance..."
 cc -std=c11 -g -fno-common -Wall -Wno-switch -o $APP/chibicc \
 	$TMP/strings.o $TMP/tokenize.o   $TMP/hashmap.o \
 	$TMP/type.o    $TMP/main.o       $TMP/parse.o   \
