@@ -43,6 +43,7 @@ function mkdir_ifnotexist() {
 # -------- EXECUTION --------
 
 #clean previous generation
+$CXD/clean
 if [[ -f $APP/chibicc ]]; then
 	rm $APP/chibicc
 fi
@@ -51,9 +52,7 @@ mkdir_ifnotexist $pCXD/out $TMP $APP
 #dependencies compilation
 echo "Compiling dependencies..."
 for n in strings tokenize hashmap type main parse codegen preprocess unicode; do
-	if [[ ! -f $TMP/$n.o ]]; then
-		cc -std=c11 -g -fno-common -Wall -Wno-switch -c -o $TMP/$n.o $SRC/$n.c
-	fi
+	cc -std=c11 -g -fno-common -Wall -Wno-switch -c -o $TMP/$n.o $SRC/$n.c
 done
 
 #main program compilation
