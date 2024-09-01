@@ -4,6 +4,9 @@
 
 # -------- DECLARATIONS --------
 
+#exit on error
+set -e
+
 #current execution directory
 CXD=$(dirname $(realpath $0))
 pCXD=$(dirname $CXD)
@@ -16,4 +19,6 @@ pCXD=$(dirname $CXD)
 # -------- EXECUTION --------
 
 #remove temporary generated files
+echo "Cleaning temporary files..."
 rm --force $pCXD/out/tmp/*.o
+echo "Cleaning done."

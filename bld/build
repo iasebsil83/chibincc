@@ -4,6 +4,9 @@
 
 # -------- DECLARATIONS --------
 
+#exit on error
+set -e
+
 #current execution directory
 CXD=$(dirname $(realpath $0))
 pCXD=$(dirname $CXD)
@@ -46,6 +49,7 @@ fi
 mkdir_ifnotexist $pCXD/out $TMP $APP
 
 #dependencies compilation
+echo "Compiling dependencies..."
 for n in strings tokenize hashmap type main parse codegen preprocess unicode; do
 	if [[ ! -f $TMP/$n.o ]]; then
 		cc -std=c11 -g -fno-common -Wall -Wno-switch -c -o $TMP/$n.o $SRC/$n.c
@@ -53,7 +57,9 @@ for n in strings tokenize hashmap type main parse codegen preprocess unicode; do
 done
 
 #main program compilation
+echo "Compiling final executable..."
 cc -std=c11 -g -fno-common -Wall -Wno-switch -o $APP/chibicc \
 	$TMP/strings.o $TMP/tokenize.o   $TMP/hashmap.o \
 	$TMP/type.o    $TMP/main.o       $TMP/parse.o   \
 	$TMP/codegen.o $TMP/preprocess.o $TMP/unicode.o
+echo "Compilation done."
