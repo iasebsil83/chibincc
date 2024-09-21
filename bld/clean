@@ -20,5 +20,5 @@ pCXD=$(dirname $CXD)
 
 #remove temporary generated files
 echo "Cleaning temporary files..."
-rm --force $pCXD/out/tmp/*.o
+rm --force $pCXD/out/tmp
 echo "Cleaning done."

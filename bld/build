@@ -48,18 +48,13 @@ if [[ -f $APP/chibicc ]]; then
 fi
 mkdir_ifnotexist $pCXD/out $TMP $APP
 
-#dependencies compilation
-echo "Compiling dependencies..."
-for n in strings tokenize hashmap type main parse codegen preprocess unicode; do
-	if [[ ! -f $TMP/$n.o ]]; then
-		cc -std=c11 -g -fno-common -Wall -Wno-switch -c -o $TMP/$n.o $SRC/$n.c
-	fi
-done
+#object compilation
+echo "Compiling main object file..."
+cc -std=c11 -g -fno-common -Wall -Wno-switch -c -o $TMP/chibicc.o $SRC/entry_point.c
 
-#main program compilation
+#executable
 echo "Compiling final executable..."
-cc -std=c11 -g -fno-common -Wall -Wno-switch -o $APP/chibicc \
-	$TMP/strings.o $TMP/tokenize.o   $TMP/hashmap.o \
-	$TMP/type.o    $TMP/main.o       $TMP/parse.o   \
-	$TMP/codegen.o $TMP/preprocess.o $TMP/unicode.o
+cc -std=c11 -g -fno-common -Wall -Wno-switch -o $APP/chibicc $TMP/chibicc.o
+
+#end message
 echo "Compilation done."
