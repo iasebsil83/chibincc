@@ -3,6 +3,9 @@
 //standards
 #include "std.c"
 
+//compilation
+#include "compiler.c"
+
 
 
 
@@ -11,25 +14,62 @@
 // ---------------- OPTIONS ----------------
 
 //options
-byt OPTION__COMMON = '\x00'; //defaulted to true
-byt OPTION__PIC = '\x01';
-byt OPTION__X = '\x02'; //BYT
-byt OPTION__INCLUDE = '\x03'; //TAB[STR]
-byt OPTION__PREPROCESSOR = '\x04';
-byt OPTION__M = '\x05';
-byt OPTION__MD = '\x06';
-byt OPTION__MMD = '\x07';
-byt OPTION__MP = '\x08';
-byt OPTION__ASM = '\x09';
-byt OPTION__C   = '\x0a';
-byt OPTION__CC1 = '\x0b';
-byt OPTION__HASH = '\x0c';
-byt OPTION__STATIC = '\x0d';
-byt OPTION__SHARED = '\x0e';
-byt OPTION__MF = '\x0f';
-byt OPTION__MT = '\x10';
-byt OPTION__OUTPUT = '\x11';
-byt OPTION__HELP = '\x12';
+byt OPTION__ASM     = '\x00';
+byt OPTION__HELP    = '\x01';
+byt OPTION__INCLUDE = '\x02';
+byt OPTION__LINK    = '\x03';
+byt OPTION__OUTPUT  = '\x04';
+byt OPTION__PRE     = '\x05'; //preprocessor
+byt OPTION__PIC     = '\x06';
+byt OPTION__SDL     = '\x07';
+
+//compilation modes
+byt MODE__PRE = '\x00'; //preprocessor
+byt MODE__ASM = '\x01';
+byt MODE__OBJ = '\x02';
+
+
+
+
+
+
+// ---------------- TOOLS ----------------
+
+//help menu
+void printUsage(tab* opts) {
+	IO__println(s("Usage: chibincc [options] <files>..."));
+	IO__println(s("\nCompile NC source code into object format.\n"));
+	Opt__printUsage(opts);
+	Syscall__exit(Err__SUCCESS);
+}
+
+tab* collectDependencies_SDL(opt* o){
+	tab* deps = NULL;
+	if(opt__enabled(o)){
+		deps = str__splitByChr(o->value, ':');
+
+		//check if library exists
+		for(ulng d=0UL; d < deps->length; d++) {
+			//str* p = tab_str__index(deps, d);
+			//<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< TODO (check absolute paths + in standard paths (/lib) + in LD_LIBRARY_PATH)
+			//Path__errorIfNotFIle(p, Err__FAILURE);
+		}
+	}
+	return deps;
+}
+
+tab* collectDependencies_includes(opt* o){
+	tab* deps = NULL;
+	if(opt__enabled(o)){
+		deps = str__splitByChr(o->value, ':');
+
+		//check if directory exists
+		for(ulng d=0UL; d < deps->length; d++) {
+			Path__errorIfNotDir(tab_str__index(deps, d), Err__FAILURE);
+		}
+	}
+	return deps;
+}
 
 
 
@@ -38,81 +78,146 @@ byt OPTION__HELP = '\x12';
 
 // ---------------- EXECUTION ----------------
 
-//output shortcuts
-void printBooOpt(opt* o) {
-	if(opt__enabled(o)) {
-		IO__println(
-			str__add(str__add(s("  Boolean option '--"), o->long_name), s("' is enabled."))
-		);
-	}
-}
-
-void printTextOpt(opt* o) {
-	if(opt__enabled(o)) {
-		IO__println(
-			str__add(str__add(str__add(str__add(s("  Text option '--"), o->long_name), s("' is enabled with value \"")), o->value), s("\"."))
-		);
-	}
-}
-
-
-
 //main
 byt zmain(tab* args) {
 
-	//arguments
-	tab* opts = Tab__new(19, NULL);
-	tab_opt__indexAssign(opts, OPTION__COMMON      , Opt__new('O', s("common"), false));
-	tab_opt__indexAssign(opts, OPTION__PIC         , Opt__new('i', s("pic"), false));
-	tab_opt__indexAssign(opts, OPTION__X           , Opt__new('x', s("x"), true));
-	tab_opt__indexAssign(opts, OPTION__INCLUDE     , Opt__new('I', s("include"), false));
-	tab_opt__indexAssign(opts, OPTION__PREPROCESSOR, Opt__new('p', s("preprocessor"), false));
-	tab_opt__indexAssign(opts, OPTION__M           , Opt__new('m', s("m"), false));
-	tab_opt__indexAssign(opts, OPTION__MD          , Opt__new('d', s("md"), false));
-	tab_opt__indexAssign(opts, OPTION__MMD         , Opt__new('M', s("mmd"), false));
-	tab_opt__indexAssign(opts, OPTION__MP          , Opt__new('P', s("mp"), false));
-	tab_opt__indexAssign(opts, OPTION__ASM         , Opt__new('s', s("asm"), false));
-	tab_opt__indexAssign(opts, OPTION__C           , Opt__new('c', s("c"), false));
-	tab_opt__indexAssign(opts, OPTION__CC1         , Opt__new('C', s("cc1"), false));
-	tab_opt__indexAssign(opts, OPTION__HASH        , Opt__new('H', s("hash"), false));
-	tab_opt__indexAssign(opts, OPTION__STATIC      , Opt__new('T', s("static"), false));
-	tab_opt__indexAssign(opts, OPTION__SHARED      , Opt__new('S', s("shared"), false));
-	tab_opt__indexAssign(opts, OPTION__MF          , Opt__new('f', s("mf"), true));
-	tab_opt__indexAssign(opts, OPTION__MT          , Opt__new('t', s("mt"), true));
-	tab_opt__indexAssign(opts, OPTION__OUTPUT      , Opt__new('o', s("output"), true));
-	tab_opt__indexAssign(opts, OPTION__HELP        , Opt__new('h', s("help"), false));
-	//IO__println(s("ALPHA"));
+	//opts & args
+	tab* opts = Tab__new(8UL, NULL);
+	tab_opt__indexAssign(opts, OPTION__ASM, Opt__new(
+		'a', s("asm"), false,
+		Tab__new_2(
+			s("Compile until Assembly code only."),
+			s("Produce '.asm' files.")
+		)
+	));
+	tab_opt__indexAssign(opts, OPTION__HELP, Opt__new(
+		'h', s("help"), false,
+		Tab__new_1(
+			s("Show this help menu.")
+		)
+	));
+	tab_opt__indexAssign(opts, OPTION__INCLUDE, Opt__new(
+		'i', s("include"), true,
+		Tab__new_2(
+			s("Add include directories."),
+			s("If multiples, use colons ':' as separator.")
+		)
+	));
+	tab_opt__indexAssign(opts, OPTION__LINK, Opt__new(
+		'l', s("link"), true,
+		Tab__new_2(
+			s("Add required SDL dependencies."),
+			s("If multiples, use colons ':' as separator.")
+		)
+	));
+	tab_opt__indexAssign(opts, OPTION__OUTPUT, Opt__new(
+		'o', s("output"), true,
+		Tab__new_2(
+			s("Set the name of the output result file."),
+			s("Only applicable when compiling a single file.")
+		)
+	));
+	tab_opt__indexAssign(opts, OPTION__PRE, Opt__new(
+		'p', s("prep"), false,
+		Tab__new_2(
+			s("Only run preprocessor over given code."),
+			s("Produce '.nc.p' files.")
+		)
+	));
+	tab_opt__indexAssign(opts, OPTION__PIC, Opt__new(
+		'P', s("PIC"), false,
+		Tab__new_2(
+			s("Compile using Position Independant Code mechanisms."),
+			s("(required for making SDL files)")
+		)
+	));
+	tab_opt__indexAssign(opts, OPTION__SDL, Opt__new(
+		's', s("sdl"), false,
+		Tab__new_3(
+			s("Compile into an SDL instead of an object file."),
+			s("Option '-P/--pic' is automatically enabled with it."),
+			s("Produce '.sdl' files.")
+		)
+	));
 	Arg__parse(args, opts);
-	//IO__println(s("BETA"));
 
-	//print options statuses
-	IO__println(s("Options ("));
-	printBooOpt(tab_opt__index(opts, OPTION__COMMON));
-	printBooOpt(tab_opt__index(opts, OPTION__PIC));
-	printTextOpt(tab_opt__index(opts, OPTION__X));
-	printBooOpt(tab_opt__index(opts, OPTION__INCLUDE));
-	printBooOpt(tab_opt__index(opts, OPTION__PREPROCESSOR));
-	printBooOpt(tab_opt__index(opts, OPTION__M));
-	printBooOpt(tab_opt__index(opts, OPTION__MD));
-	printBooOpt(tab_opt__index(opts, OPTION__MMD));
-	printBooOpt(tab_opt__index(opts, OPTION__MP));
-	printBooOpt(tab_opt__index(opts, OPTION__ASM));
-	printBooOpt(tab_opt__index(opts, OPTION__C));
-	printBooOpt(tab_opt__index(opts, OPTION__CC1));
-	printBooOpt(tab_opt__index(opts, OPTION__HASH));
-	printBooOpt(tab_opt__index(opts, OPTION__STATIC));
-	printBooOpt(tab_opt__index(opts, OPTION__SHARED));
-	printTextOpt(tab_opt__index(opts, OPTION__MF));
-	printTextOpt(tab_opt__index(opts, OPTION__MT));
-	printTextOpt(tab_opt__index(opts, OPTION__OUTPUT));
-	printBooOpt(tab_opt__index(opts, OPTION__HELP));
-
-	//print real arguments
-	IO__println(s(")\nReal arguments ("));
-	for(ulng i=0UL; i < args->length; i++) {
-		IO__println( str__add(str__add(s("  \""), tab_str__index(args,i)), s("\",")) );
+	//help menu
+	if(opt__enabled(tab_opt__index(opts, OPTION__HELP))) {
+		printUsage(opts);
 	}
-	IO__println(s(")"));
 
+	//output opt with multiple args
+	str* outputPath = NULL;
+	opt* o          = tab_opt__index(opts, OPTION__OUTPUT);
+	if(opt__enabled(o)) {
+		if(args->length > 1){
+			Err__error(s("Cannot have option '-o/--output' with multiple files as input."), 1);
+		}
+		outputPath = o->value;
+	}
+
+	//get SDL dependencies
+	tab* SDLDeps = collectDependencies_SDL(tab_opt__index(opts, OPTION__LINK));
+
+	//get include dirs
+	tab* includeDirs = collectDependencies_includes(tab_opt__index(opts, OPTION__INCLUDE));
+
+	//compilation mode : OBJ (default)
+	byt mode = MODE__OBJ;
+
+	//compilation mode : ASM
+	if(opt__enabled(tab_opt__index(opts, OPTION__ASM))) { mode = MODE__ASM; }
+
+	//compilation mode : PRE
+	if(opt__enabled(tab_opt__index(opts, OPTION__PRE))) {
+		if(mode != MODE__OBJ) { Err__error(s("Cannot have both '-a/--asm' and '-p/--prep'."), 1); }
+		mode = MODE__PRE;
+	}
+
+	//store PIC info
+	boo usePIC = opt__enabled(tab_opt__index(opts, OPTION__PIC));
+
+	//compile each file
+	for(ulng f=0UL; f < args->length; f++) {
+		str* inputPath = tab_str__index(args, f);
+		Path__errorIfNotFile(inputPath, Err__FAILURE);
+
+		//debug
+		IO__print(s("Compiling file '"));
+		IO__print(inputPath);
+		IO__println(s("' {"));
+
+		//preprocessor
+		if(mode == MODE__PRE) {
+			if(outputPath == NULL) { outputPath = str__add(Path__name(inputPath), s(".nc.p")); }
+			IO__writeFile(
+				outputPath,
+				preprocess(inputPath, includeDirs) //runcc1(argc, argv, input, NULL)
+			);
+		}
+
+		//assembly
+		else if(mode == MODE__ASM) {
+			if(outputPath == NULL) { outputPath = str__add(Path__name(inputPath), s(".asm")); }
+			IO__writeFile(
+				outputPath,
+				assemble(inputPath, includeDirs)
+			);
+		}
+
+		//object (default)
+		else {
+			if(outputPath == NULL) { outputPath = str__add(Path__name(inputPath), s(".o")); }
+			IO__writeFile(
+				outputPath,
+				compile(inputPath, includeDirs, SDLDeps, usePIC)
+			);
+		}
+
+		//debug
+		IO__println(s("}"));
+	}
+
+	//terminated successfully
 	return Err__SUCCESS;
 }

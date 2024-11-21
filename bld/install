@@ -6,7 +6,6 @@
 
 #current execution directory
 CXD=$(dirname $(realpath $0))
-pCXD=$(dirname $CXD)
 
 
 

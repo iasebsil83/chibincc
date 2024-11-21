@@ -2,6 +2,9 @@
 
 
 
+
+
+
 # -------- DECLARATIONS --------
 
 #exit on error
@@ -12,7 +15,6 @@ CXD=$(dirname $(realpath $0))
 pCXD=$(dirname $CXD)
 
 #input/output
-SRC=$pCXD/src
 TMP=$pCXD/out/tmp
 APP=$pCXD/out/app
 
@@ -24,16 +26,11 @@ cd $pCXD
 
 
 
-# -------- TOOLS --------
+# -------- INITIALIZATION --------
 
-#mkdir_ifnotexist <<<<<<<<<<<<<<<<<<<<< should be an STDZ function
-function mkdir_ifnotexist() {
-	for a in $@; do
-		if [[ ! -d $a ]]; then
-			mkdir $a
-		fi
-	done
-}
+#remove previous generations
+rm --recursive --force $TMP $APP
+mkdir --parents        $TMP $APP
 
 
 
@@ -42,19 +39,13 @@ function mkdir_ifnotexist() {
 
 # -------- EXECUTION --------
 
-#clean previous generation
-if [[ -f $APP/chibicc ]]; then
-	rm $APP/chibicc
-fi
-mkdir_ifnotexist $pCXD/out $TMP $APP
-
 #object compilation
 echo "Compiling main object file..."
-cc -std=c11 -g -fno-common -Wall -Wno-switch -c -o $TMP/chibicc.o $SRC/entry_point.c
+cc -std=c11 -g -fno-common -Wall -Wno-switch -c -o $TMP/chibincc.o $pCXD/src/entry_point.c
 
 #executable
 echo "Compiling final executable..."
-cc -std=c11 -g -fno-common -Wall -Wno-switch -o $APP/chibicc $TMP/chibicc.o
+cc -std=c11 -g -fno-common -Wall -Wno-switch -o $APP/chibincc $TMP/chibincc.o
 
 #end message
 echo "Compilation done."

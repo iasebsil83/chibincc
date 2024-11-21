@@ -4,6 +4,9 @@
 
 # -------- DECLARATIONS --------
 
+#exit on error
+set -e
+
 #current execution directory
 CXD=$(dirname $(realpath $0))
 pCXD=$(dirname $CXD)
@@ -15,8 +18,7 @@ pCXD=$(dirname $CXD)
 
 # -------- EXECUTION --------
 
-#get into test directory
-cd $pCXD/tst
-
-#remove generated files
-rm *.exe *.s stage2
+#remove temporary generated files
+echo "Cleaning temporary files..."
+rm --recursive --force $pCXD/out/tmp
+echo "Cleaning done."
