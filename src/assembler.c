@@ -1,17 +1,20 @@
 // ---------------- DEPENDENCIES ----------------
 
 //preprocess
-#include "preprocessor.c"
+#include "compiler.c"
 
 
 
 
 
 
-// ---------------- ANYTHING ----------------
+// ---------------- ASSEMBLING ----------------
 
-//anything
-//
+//assembling
+str* buildObj(str* inputASM) {
+	return inputASM;
+}
+
 
 
 
@@ -32,8 +35,13 @@ str* assemble(str* inputPath, tab* includeDirs) {
 	IO__println(s("]"));
 	IO__println(s("  }"));
 
-	//read input file
-	str* inputText = IO__readFile(inputPath);
+	//compile first
+	str* asm = compile(inputPath, includeDirs);
 
-	return inputText;
+	//assemble
+	str* result = buildObj(asm);
+	//str__free(asm); <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< DONT FREE FOR THE MOMENT AS IT IS EXACTLY THE SAME THING AS RESULT
+
+	//return result
+	return result;
 }

@@ -4,7 +4,7 @@
 #include <stdlib.h> //malloc(), free(), exit()
 
 //output
-#include <stdio.h> //putchar(), fopen(), fgetc(), fputc(), fclose(), fseek(), ftell()
+#include <stdio.h> //putchar(), fopen(), fgetc(), fputc(), fclose(), fseek(), ftell(), open_memstream()
 
 
 
@@ -37,6 +37,8 @@ boo true  = '\x01';
 void Syscall__exit(byt err) {
 	exit(err);
 }
+
+
 
 
 
@@ -325,6 +327,42 @@ tab* Tab__new_3(str* elem1, str* elem2, str* elem3) { //intermediate to declare 
 	tab_str__indexAssign(t, 2UL, elem3);
 	return t;
 }
+boo Oiam__chr_str(chr a, str* b) {
+	for(ulng c=0ULL; c < b->length; c++) {
+		if(a == str__index(b, c)) { return true; }
+	}
+	return false;
+}
+
+//indexed strings
+typedef struct {
+	str* s;
+	ulng index;
+} istr;
+/*istr* IStr__new(ulng length) { //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< NOT USED YET
+	istr* i  = malloc(sizeof(istr));
+	i->s     = Str__new(length);
+	i->index = -1LL;
+	return i;
+}*/
+istr* IStr__fromStr(str* s) {
+	istr* i  = malloc(sizeof(istr));
+	i->s     = s;
+	i->index = -1LL;
+	return i;
+}
+boo istr__forward(istr* i, ulng step) {
+	if((i->index + step) >= i->s->length) { return true; } //could not forward => ret true
+	i->index += step;
+	return false
+}
+boo istr__inc(istr* i) { return istr__forward(istr* i, 1ULL); }
+chr istr__get(istr* i) {
+	return i->s->data[i->index];
+}
+/*void istr__set(istr* i, chr value) { //<<<<<<<<<<<<<<<<<<<<< NOT USED YET
+	i->s->data[i->index] = value;
+}*/
 
 
 
@@ -334,14 +372,14 @@ tab* Tab__new_3(str* elem1, str* elem2, str* elem3) { //intermediate to declare 
 // ---------------- IO ----------------
 
 //definitions
-chr IO__MODE_READ[]  = "r";
-chr IO__MODE_WRITE[] = "w";
-ulng IO__SEEK_BEGINNING = 0UL;
-ulng IO__SEEK_CURRENT   = 1UL;
-ulng IO__SEEK_END       = 2UL;
+chr  IO__MODE_READ[]  = "r";
+chr  IO__MODE_WRITE[] = "w";
+ulng IO__SEEK__BEG = 0ULL;
+ulng IO__SEEK__CUR = 1ULL;
+ulng IO__SEEK__END = 2ULL;
 int IO__EOF = -1;
 typedef struct {
-	ulng length;
+	ulng  length;
 	FILE* c_ptr;
 } IO__file;
 
@@ -366,11 +404,11 @@ void IO__file__seek(IO__file* f, ulng offset, ulng ref) {
 }
 ulng IO__file__calculateLength(IO__file* f, boo fromBeginning) {
 	ulng firstPos;
-	if(fromBeginning){ firstPos = 0UL;                }
+	if(fromBeginning){ firstPos = 0ULL;               }
 	else             { firstPos = IO__file__index(f); }
-	IO__file__seek(f, 0UL, IO__SEEK_END);
+	IO__file__seek(f, 0ULL, IO__SEEK__END);
 	ulng lastPos = IO__file__index(f);
-	IO__file__seek(f, firstPos, IO__SEEK_BEGINNING);
+	IO__file__seek(f, firstPos, IO__SEEK__BEG);
 	f->length = lastPos;
 	return lastPos - firstPos;
 }
@@ -386,7 +424,7 @@ int IO__file__readChr(IO__file* f) {
 }
 str* IO__file__readUntil(IO__file* f, int end) {
 	str* biggestResult = Str__new(f->length);
-	ulng c=0UL;
+	ulng c=0ULL;
 	while(c < f->length) {
 		int i = IO__file__readChr(f);
 		if(i == IO__EOF || i == (int)end) {
@@ -422,6 +460,27 @@ void IO__writeFile(str* path, str* text) {
 	IO__file* f = IO__open(path, IO__MODE_WRITE);
 	IO__file__write(f, text);
 	IO__file__close(f);
+}
+void IO__file__flush(IO__file* f) {
+	fflush(f->c_ptr);
+}
+
+//dynamic memory buffer
+typedef struct {
+	IO__file* metadata,
+	byt*      addr
+} dmb;
+
+//module
+dmb* Dmb__new() {
+	dmb* d = malloc(sizeof(dmb));
+	d->metadata        = malloc(sizeof(IO__file));
+	d->metadata->c_ptr = open_memstream(&(d->addr), &(d->metadata->length));
+	return d;
+}
+
+void dmb__flush(dmb* d) {
+	IO__file__flush(d->metadata);
 }
 
 
@@ -693,4 +752,333 @@ void Path__errorIfNotFile(str* path, byt err) {
 			err
 		);
 	}
+}
+
+
+
+
+
+
+// ---------------- CONVERSIONS ----------------
+
+//unsigned -> str
+chr ubyt__lastHexDigit(ubyt u) {
+	if(u < '\x0a') { return '0' + u; }
+	return 'a' + u - '\x0a';
+}
+str* ulng__toStr(ulng u) {
+	str* result;
+
+	//separate digits
+	ulng rest          = u;
+	ulng tenPowJ_digit = rest / 10000000000000000000ULL;
+	rest -= 10000000000000000000ULL * tenPowJ_digit;
+
+	ulng tenPowI_digit = rest / 1000000000000000000ULL;
+	rest -= 1000000000000000000ULL * tenPowI_digit;
+
+	ulng tenPowH_digit = rest / 100000000000000000ULL;
+	rest -= 100000000000000000ULL * tenPowH_digit;
+
+	ulng tenPowG_digit = rest / 10000000000000000ULL;
+	rest -= 10000000000000000ULL * tenPowG_digit;
+
+	ulng tenPowF_digit = rest / 1000000000000000ULL;
+	rest -= 1000000000000000ULL * tenPowF_digit;
+
+	ulng tenPowE_digit = rest / 100000000000000ULL;
+	rest -= 100000000000000ULL * tenPowE_digit;
+
+	ulng tenPowD_digit = rest / 10000000000000ULL;
+	rest -= 10000000000000ULL * tenPowD_digit;
+
+	ulng tenPowC_digit = rest / 1000000000000ULL;
+	rest -= 1000000000000ULL * tenPowC_digit;
+
+	ulng tenPowB_digit = rest / 100000000000ULL;
+	rest -= 100000000000ULL * tenPowB_digit;
+
+	ulng tenPowA_digit = rest / 10000000000ULL;
+	rest -= 10000000000ULL * tenPowA_digit;
+
+	ulng tenPow9_digit = rest / 1000000000ULL;
+	rest -= 1000000000ULL * tenPow9_digit;
+
+	ulng tenPow8_digit; = rest / 100000000ULL;
+	rest -= 100000000ULL * tenPow8_digit;
+
+	ulng tenPow7_digit = rest / 10000000ULL;
+	rest -= 10000000ULL * tenPow7_digit;
+
+	ulng tenPow6_digit = rest / 1000000ULL;
+	rest -= 1000000ULL * tenPow6_digit;
+
+	ulng tenPow5_digit = rest / 100000ULL;
+	rest -= 100000ULL * tenPow5_digit;
+
+	ulng tenPow4_digit = rest / 10000ULL;
+	rest -= 10000ULL * tenPow4_digit;
+
+	ulng tenPow3_digit = rest / 1000ULL;
+	rest -= 1000ULL * tenPow3_digit;
+
+	ulng tenPow2_digit = rest / 100ULL;
+	rest -= 100ULL * tenPow2_digit;
+
+	ulng tenPow1_digit = rest / 10ULL;
+	rest -= 10ULL * tenPow1_digit;
+
+	//write in string
+	if(tenPowJ_digit){
+		result = MStr__new(20LL);
+		tab_str__indexAssign(result,  0LL, ubyt__lastHexDigit(tenPowJ_digit));
+		tab_str__indexAssign(result,  1LL, ubyt__lastHexDigit(tenPowI_digit));
+		tab_str__indexAssign(result,  2LL, ubyt__lastHexDigit(tenPowH_digit));
+		tab_str__indexAssign(result,  3LL, ubyt__lastHexDigit(tenPowG_digit));
+		tab_str__indexAssign(result,  4LL, ubyt__lastHexDigit(tenPowF_digit));
+		tab_str__indexAssign(result,  5LL, ubyt__lastHexDigit(tenPowE_digit));
+		tab_str__indexAssign(result,  6LL, ubyt__lastHexDigit(tenPowD_digit));
+		tab_str__indexAssign(result,  7LL, ubyt__lastHexDigit(tenPowC_digit));
+		tab_str__indexAssign(result,  8LL, ubyt__lastHexDigit(tenPowB_digit));
+		tab_str__indexAssign(result,  9LL, ubyt__lastHexDigit(tenPowA_digit));
+		tab_str__indexAssign(result, 10LL, ubyt__lastHexDigit(tenPow9_digit));
+		tab_str__indexAssign(result, 11LL, ubyt__lastHexDigit(tenPow8_digit));
+		tab_str__indexAssign(result, 12LL, ubyt__lastHexDigit(tenPow7_digit));
+		tab_str__indexAssign(result, 13LL, ubyt__lastHexDigit(tenPow6_digit));
+		tab_str__indexAssign(result, 14LL, ubyt__lastHexDigit(tenPow5_digit));
+		tab_str__indexAssign(result, 15LL, ubyt__lastHexDigit(tenPow4_digit));
+		tab_str__indexAssign(result, 16LL, ubyt__lastHexDigit(tenPow3_digit));
+		tab_str__indexAssign(result, 17LL, ubyt__lastHexDigit(tenPow2_digit));
+		tab_str__indexAssign(result, 18LL, ubyt__lastHexDigit(tenPow1_digit));
+		tab_str__indexAssign(result, 19LL, ubyt__lastHexDigit(rest));
+	} else if(tenPowI_digit){
+		result = MStr__new(19LL);
+		tab_str__indexAssign(result,  0LL, ubyt__lastHexDigit(tenPowI_digit));
+		tab_str__indexAssign(result,  1LL, ubyt__lastHexDigit(tenPowH_digit));
+		tab_str__indexAssign(result,  2LL, ubyt__lastHexDigit(tenPowG_digit));
+		tab_str__indexAssign(result,  3LL, ubyt__lastHexDigit(tenPowF_digit));
+		tab_str__indexAssign(result,  4LL, ubyt__lastHexDigit(tenPowE_digit));
+		tab_str__indexAssign(result,  5LL, ubyt__lastHexDigit(tenPowD_digit));
+		tab_str__indexAssign(result,  6LL, ubyt__lastHexDigit(tenPowC_digit));
+		tab_str__indexAssign(result,  7LL, ubyt__lastHexDigit(tenPowB_digit));
+		tab_str__indexAssign(result,  8LL, ubyt__lastHexDigit(tenPowA_digit));
+		tab_str__indexAssign(result,  9LL, ubyt__lastHexDigit(tenPow9_digit));
+		tab_str__indexAssign(result, 10LL, ubyt__lastHexDigit(tenPow8_digit));
+		tab_str__indexAssign(result, 11LL, ubyt__lastHexDigit(tenPow7_digit));
+		tab_str__indexAssign(result, 12LL, ubyt__lastHexDigit(tenPow6_digit));
+		tab_str__indexAssign(result, 13LL, ubyt__lastHexDigit(tenPow5_digit));
+		tab_str__indexAssign(result, 14LL, ubyt__lastHexDigit(tenPow4_digit));
+		tab_str__indexAssign(result, 15LL, ubyt__lastHexDigit(tenPow3_digit));
+		tab_str__indexAssign(result, 16LL, ubyt__lastHexDigit(tenPow2_digit));
+		tab_str__indexAssign(result, 17LL, ubyt__lastHexDigit(tenPow1_digit));
+		tab_str__indexAssign(result, 18LL, ubyt__lastHexDigit(rest));
+	} else if(tenPowH_digit){
+		result = MStr__new(18LL);
+		tab_str__indexAssign(result,  0LL, ubyt__lastHexDigit(tenPowH_digit));
+		tab_str__indexAssign(result,  1LL, ubyt__lastHexDigit(tenPowG_digit));
+		tab_str__indexAssign(result,  2LL, ubyt__lastHexDigit(tenPowF_digit));
+		tab_str__indexAssign(result,  3LL, ubyt__lastHexDigit(tenPowE_digit));
+		tab_str__indexAssign(result,  4LL, ubyt__lastHexDigit(tenPowD_digit));
+		tab_str__indexAssign(result,  5LL, ubyt__lastHexDigit(tenPowC_digit));
+		tab_str__indexAssign(result,  6LL, ubyt__lastHexDigit(tenPowB_digit));
+		tab_str__indexAssign(result,  7LL, ubyt__lastHexDigit(tenPowA_digit));
+		tab_str__indexAssign(result,  8LL, ubyt__lastHexDigit(tenPow9_digit));
+		tab_str__indexAssign(result,  9LL, ubyt__lastHexDigit(tenPow8_digit));
+		tab_str__indexAssign(result, 10LL, ubyt__lastHexDigit(tenPow7_digit));
+		tab_str__indexAssign(result, 11LL, ubyt__lastHexDigit(tenPow6_digit));
+		tab_str__indexAssign(result, 12LL, ubyt__lastHexDigit(tenPow5_digit));
+		tab_str__indexAssign(result, 13LL, ubyt__lastHexDigit(tenPow4_digit));
+		tab_str__indexAssign(result, 14LL, ubyt__lastHexDigit(tenPow3_digit));
+		tab_str__indexAssign(result, 15LL, ubyt__lastHexDigit(tenPow2_digit));
+		tab_str__indexAssign(result, 16LL, ubyt__lastHexDigit(tenPow1_digit));
+		tab_str__indexAssign(result, 17LL, ubyt__lastHexDigit(rest));
+	} else if(tenPowG_digit){
+		result = MStr__new(17LL);
+		tab_str__indexAssign(result,  0LL, ubyt__lastHexDigit(tenPowG_digit));
+		tab_str__indexAssign(result,  1LL, ubyt__lastHexDigit(tenPowF_digit));
+		tab_str__indexAssign(result,  2LL, ubyt__lastHexDigit(tenPowE_digit));
+		tab_str__indexAssign(result,  3LL, ubyt__lastHexDigit(tenPowD_digit));
+		tab_str__indexAssign(result,  4LL, ubyt__lastHexDigit(tenPowC_digit));
+		tab_str__indexAssign(result,  5LL, ubyt__lastHexDigit(tenPowB_digit));
+		tab_str__indexAssign(result,  6LL, ubyt__lastHexDigit(tenPowA_digit));
+		tab_str__indexAssign(result,  7LL, ubyt__lastHexDigit(tenPow9_digit));
+		tab_str__indexAssign(result,  8LL, ubyt__lastHexDigit(tenPow8_digit));
+		tab_str__indexAssign(result,  9LL, ubyt__lastHexDigit(tenPow7_digit));
+		tab_str__indexAssign(result, 10LL, ubyt__lastHexDigit(tenPow6_digit));
+		tab_str__indexAssign(result, 11LL, ubyt__lastHexDigit(tenPow5_digit));
+		tab_str__indexAssign(result, 12LL, ubyt__lastHexDigit(tenPow4_digit));
+		tab_str__indexAssign(result, 13LL, ubyt__lastHexDigit(tenPow3_digit));
+		tab_str__indexAssign(result, 14LL, ubyt__lastHexDigit(tenPow2_digit));
+		tab_str__indexAssign(result, 15LL, ubyt__lastHexDigit(tenPow1_digit));
+		tab_str__indexAssign(result, 16LL, ubyt__lastHexDigit(rest));
+	} else if(tenPowF_digit){
+		result = MStr__new(16LL);
+		tab_str__indexAssign(result,  0LL, ubyt__lastHexDigit(tenPowF_digit));
+		tab_str__indexAssign(result,  1LL, ubyt__lastHexDigit(tenPowE_digit));
+		tab_str__indexAssign(result,  2LL, ubyt__lastHexDigit(tenPowD_digit));
+		tab_str__indexAssign(result,  3LL, ubyt__lastHexDigit(tenPowC_digit));
+		tab_str__indexAssign(result,  4LL, ubyt__lastHexDigit(tenPowB_digit));
+		tab_str__indexAssign(result,  5LL, ubyt__lastHexDigit(tenPowA_digit));
+		tab_str__indexAssign(result,  6LL, ubyt__lastHexDigit(tenPow9_digit));
+		tab_str__indexAssign(result,  7LL, ubyt__lastHexDigit(tenPow8_digit));
+		tab_str__indexAssign(result,  8LL, ubyt__lastHexDigit(tenPow7_digit));
+		tab_str__indexAssign(result,  9LL, ubyt__lastHexDigit(tenPow6_digit));
+		tab_str__indexAssign(result, 10LL, ubyt__lastHexDigit(tenPow5_digit));
+		tab_str__indexAssign(result, 11LL, ubyt__lastHexDigit(tenPow4_digit));
+		tab_str__indexAssign(result, 12LL, ubyt__lastHexDigit(tenPow3_digit));
+		tab_str__indexAssign(result, 13LL, ubyt__lastHexDigit(tenPow2_digit));
+		tab_str__indexAssign(result, 14LL, ubyt__lastHexDigit(tenPow1_digit));
+		tab_str__indexAssign(result, 15LL, ubyt__lastHexDigit(rest));
+	} else if(tenPowE_digit){
+		result = MStr__new(15LL);
+		tab_str__indexAssign(result,  0LL, ubyt__lastHexDigit(tenPowE_digit));
+		tab_str__indexAssign(result,  1LL, ubyt__lastHexDigit(tenPowD_digit));
+		tab_str__indexAssign(result,  2LL, ubyt__lastHexDigit(tenPowC_digit));
+		tab_str__indexAssign(result,  3LL, ubyt__lastHexDigit(tenPowB_digit));
+		tab_str__indexAssign(result,  4LL, ubyt__lastHexDigit(tenPowA_digit));
+		tab_str__indexAssign(result,  5LL, ubyt__lastHexDigit(tenPow9_digit));
+		tab_str__indexAssign(result,  6LL, ubyt__lastHexDigit(tenPow8_digit));
+		tab_str__indexAssign(result,  7LL, ubyt__lastHexDigit(tenPow7_digit));
+		tab_str__indexAssign(result,  8LL, ubyt__lastHexDigit(tenPow6_digit));
+		tab_str__indexAssign(result,  9LL, ubyt__lastHexDigit(tenPow5_digit));
+		tab_str__indexAssign(result, 10LL, ubyt__lastHexDigit(tenPow4_digit));
+		tab_str__indexAssign(result, 11LL, ubyt__lastHexDigit(tenPow3_digit));
+		tab_str__indexAssign(result, 12LL, ubyt__lastHexDigit(tenPow2_digit));
+		tab_str__indexAssign(result, 13LL, ubyt__lastHexDigit(tenPow1_digit));
+		tab_str__indexAssign(result, 14LL, ubyt__lastHexDigit(rest));
+	} else if(tenPowD_digit){
+		result = MStr__new(14LL);
+		tab_str__indexAssign(result,  0LL, ubyt__lastHexDigit(tenPowD_digit));
+		tab_str__indexAssign(result,  1LL, ubyt__lastHexDigit(tenPowC_digit));
+		tab_str__indexAssign(result,  2LL, ubyt__lastHexDigit(tenPowB_digit));
+		tab_str__indexAssign(result,  3LL, ubyt__lastHexDigit(tenPowA_digit));
+		tab_str__indexAssign(result,  4LL, ubyt__lastHexDigit(tenPow9_digit));
+		tab_str__indexAssign(result,  5LL, ubyt__lastHexDigit(tenPow8_digit));
+		tab_str__indexAssign(result,  6LL, ubyt__lastHexDigit(tenPow7_digit));
+		tab_str__indexAssign(result,  7LL, ubyt__lastHexDigit(tenPow6_digit));
+		tab_str__indexAssign(result,  8LL, ubyt__lastHexDigit(tenPow5_digit));
+		tab_str__indexAssign(result,  9LL, ubyt__lastHexDigit(tenPow4_digit));
+		tab_str__indexAssign(result, 10LL, ubyt__lastHexDigit(tenPow3_digit));
+		tab_str__indexAssign(result, 11LL, ubyt__lastHexDigit(tenPow2_digit));
+		tab_str__indexAssign(result, 12LL, ubyt__lastHexDigit(tenPow1_digit));
+		tab_str__indexAssign(result, 13LL, ubyt__lastHexDigit(rest));
+	} else if(tenPowC_digit){
+		result = MStr__new(13LL);
+		tab_str__indexAssign(result,  0LL, ubyt__lastHexDigit(tenPowC_digit));
+		tab_str__indexAssign(result,  1LL, ubyt__lastHexDigit(tenPowB_digit));
+		tab_str__indexAssign(result,  2LL, ubyt__lastHexDigit(tenPowA_digit));
+		tab_str__indexAssign(result,  3LL, ubyt__lastHexDigit(tenPow9_digit));
+		tab_str__indexAssign(result,  4LL, ubyt__lastHexDigit(tenPow8_digit));
+		tab_str__indexAssign(result,  5LL, ubyt__lastHexDigit(tenPow7_digit));
+		tab_str__indexAssign(result,  6LL, ubyt__lastHexDigit(tenPow6_digit));
+		tab_str__indexAssign(result,  7LL, ubyt__lastHexDigit(tenPow5_digit));
+		tab_str__indexAssign(result,  8LL, ubyt__lastHexDigit(tenPow4_digit));
+		tab_str__indexAssign(result,  9LL, ubyt__lastHexDigit(tenPow3_digit));
+		tab_str__indexAssign(result, 10LL, ubyt__lastHexDigit(tenPow2_digit));
+		tab_str__indexAssign(result, 11LL, ubyt__lastHexDigit(tenPow1_digit));
+		tab_str__indexAssign(result, 12LL, ubyt__lastHexDigit(rest));
+	} else if(tenPowB_digit){
+		result = MStr__new(12LL);
+		tab_str__indexAssign(result,  0LL, ubyt__lastHexDigit(tenPowB_digit));
+		tab_str__indexAssign(result,  1LL, ubyt__lastHexDigit(tenPowA_digit));
+		tab_str__indexAssign(result,  2LL, ubyt__lastHexDigit(tenPow9_digit));
+		tab_str__indexAssign(result,  3LL, ubyt__lastHexDigit(tenPow8_digit));
+		tab_str__indexAssign(result,  4LL, ubyt__lastHexDigit(tenPow7_digit));
+		tab_str__indexAssign(result,  5LL, ubyt__lastHexDigit(tenPow6_digit));
+		tab_str__indexAssign(result,  6LL, ubyt__lastHexDigit(tenPow5_digit));
+		tab_str__indexAssign(result,  7LL, ubyt__lastHexDigit(tenPow4_digit));
+		tab_str__indexAssign(result,  8LL, ubyt__lastHexDigit(tenPow3_digit));
+		tab_str__indexAssign(result,  9LL, ubyt__lastHexDigit(tenPow2_digit));
+		tab_str__indexAssign(result, 10LL, ubyt__lastHexDigit(tenPow1_digit));
+		tab_str__indexAssign(result, 11LL, ubyt__lastHexDigit(rest));
+	} else if(tenPowA_digit){
+		result = MStr__new(11LL);
+		tab_str__indexAssign(result,  0LL, ubyt__lastHexDigit(tenPowA_digit));
+		tab_str__indexAssign(result,  1LL, ubyt__lastHexDigit(tenPow9_digit));
+		tab_str__indexAssign(result,  2LL, ubyt__lastHexDigit(tenPow8_digit));
+		tab_str__indexAssign(result,  3LL, ubyt__lastHexDigit(tenPow7_digit));
+		tab_str__indexAssign(result,  4LL, ubyt__lastHexDigit(tenPow6_digit));
+		tab_str__indexAssign(result,  5LL, ubyt__lastHexDigit(tenPow5_digit));
+		tab_str__indexAssign(result,  6LL, ubyt__lastHexDigit(tenPow4_digit));
+		tab_str__indexAssign(result,  7LL, ubyt__lastHexDigit(tenPow3_digit));
+		tab_str__indexAssign(result,  8LL, ubyt__lastHexDigit(tenPow2_digit));
+		tab_str__indexAssign(result,  9LL, ubyt__lastHexDigit(tenPow1_digit));
+		tab_str__indexAssign(result, 10LL, ubyt__lastHexDigit(rest));
+	} else if(tenPow9_digit){
+		result = MStr__new(10LL);
+		tab_str__indexAssign(result, 0LL, ubyt__lastHexDigit(tenPow9_digit));
+		tab_str__indexAssign(result, 1LL, ubyt__lastHexDigit(tenPow8_digit));
+		tab_str__indexAssign(result, 2LL, ubyt__lastHexDigit(tenPow7_digit));
+		tab_str__indexAssign(result, 3LL, ubyt__lastHexDigit(tenPow6_digit));
+		tab_str__indexAssign(result, 4LL, ubyt__lastHexDigit(tenPow5_digit));
+		tab_str__indexAssign(result, 5LL, ubyt__lastHexDigit(tenPow4_digit));
+		tab_str__indexAssign(result, 6LL, ubyt__lastHexDigit(tenPow3_digit));
+		tab_str__indexAssign(result, 7LL, ubyt__lastHexDigit(tenPow2_digit));
+		tab_str__indexAssign(result, 8LL, ubyt__lastHexDigit(tenPow1_digit));
+		tab_str__indexAssign(result, 9LL, ubyt__lastHexDigit(rest));
+	} else if(tenPow8_digit){
+		result = MStr__new(9LL);
+		tab_str__indexAssign(result, 0LL, ubyt__lastHexDigit(tenPow8_digit));
+		tab_str__indexAssign(result, 1LL, ubyt__lastHexDigit(tenPow7_digit));
+		tab_str__indexAssign(result, 2LL, ubyt__lastHexDigit(tenPow6_digit));
+		tab_str__indexAssign(result, 3LL, ubyt__lastHexDigit(tenPow5_digit));
+		tab_str__indexAssign(result, 4LL, ubyt__lastHexDigit(tenPow4_digit));
+		tab_str__indexAssign(result, 5LL, ubyt__lastHexDigit(tenPow3_digit));
+		tab_str__indexAssign(result, 6LL, ubyt__lastHexDigit(tenPow2_digit));
+		tab_str__indexAssign(result, 7LL, ubyt__lastHexDigit(tenPow1_digit));
+		tab_str__indexAssign(result, 8LL, ubyt__lastHexDigit(rest));
+	} else if(tenPow7_digit){
+		result = MStr__new(8LL);
+		tab_str__indexAssign(result, 0LL, ubyt__lastHexDigit(tenPow7_digit));
+		tab_str__indexAssign(result, 1LL, ubyt__lastHexDigit(tenPow6_digit));
+		tab_str__indexAssign(result, 2LL, ubyt__lastHexDigit(tenPow5_digit));
+		tab_str__indexAssign(result, 3LL, ubyt__lastHexDigit(tenPow4_digit));
+		tab_str__indexAssign(result, 4LL, ubyt__lastHexDigit(tenPow3_digit));
+		tab_str__indexAssign(result, 5LL, ubyt__lastHexDigit(tenPow2_digit));
+		tab_str__indexAssign(result, 6LL, ubyt__lastHexDigit(tenPow1_digit));
+		tab_str__indexAssign(result, 7LL, ubyt__lastHexDigit(rest));
+	} else if(tenPow6_digit){
+		result = MStr__new(7LL);
+		tab_str__indexAssign(result, 0LL, ubyt__lastHexDigit(tenPow6_digit));
+		tab_str__indexAssign(result, 1LL, ubyt__lastHexDigit(tenPow5_digit));
+		tab_str__indexAssign(result, 2LL, ubyt__lastHexDigit(tenPow4_digit));
+		tab_str__indexAssign(result, 3LL, ubyt__lastHexDigit(tenPow3_digit));
+		tab_str__indexAssign(result, 4LL, ubyt__lastHexDigit(tenPow2_digit));
+		tab_str__indexAssign(result, 5LL, ubyt__lastHexDigit(tenPow1_digit));
+		tab_str__indexAssign(result, 6LL, ubyt__lastHexDigit(rest));
+	} else if(tenPow5_digit){
+		result = MStr__new(6LL);
+		tab_str__indexAssign(result, 0LL, ubyt__lastHexDigit(tenPow5_digit));
+		tab_str__indexAssign(result, 1LL, ubyt__lastHexDigit(tenPow4_digit));
+		tab_str__indexAssign(result, 2LL, ubyt__lastHexDigit(tenPow3_digit));
+		tab_str__indexAssign(result, 3LL, ubyt__lastHexDigit(tenPow2_digit));
+		tab_str__indexAssign(result, 4LL, ubyt__lastHexDigit(tenPow1_digit));
+		tab_str__indexAssign(result, 5LL, ubyt__lastHexDigit(rest));
+	} else if(tenPow4_digit){
+		result = MStr__new(5LL);
+		tab_str__indexAssign(result, 0LL, ubyt__lastHexDigit(tenPow4_digit));
+		tab_str__indexAssign(result, 1LL, ubyt__lastHexDigit(tenPow3_digit));
+		tab_str__indexAssign(result, 2LL, ubyt__lastHexDigit(tenPow2_digit));
+		tab_str__indexAssign(result, 3LL, ubyt__lastHexDigit(tenPow1_digit));
+		tab_str__indexAssign(result, 4LL, ubyt__lastHexDigit(rest));
+	} else if(tenPow3_digit){
+		result = MStr__new(4LL);
+		tab_str__indexAssign(result, 0LL, ubyt__lastHexDigit(tenPow3_digit));
+		tab_str__indexAssign(result, 1LL, ubyt__lastHexDigit(tenPow2_digit));
+		tab_str__indexAssign(result, 2LL, ubyt__lastHexDigit(tenPow1_digit));
+		tab_str__indexAssign(result, 3LL, ubyt__lastHexDigit(rest));
+	} else if(tenPow2_digit){
+		result = MStr__new(3LL);
+		tab_str__indexAssign(result, 0LL, ubyt__lastHexDigit(tenPow2_digit));
+		tab_str__indexAssign(result, 1LL, ubyt__lastHexDigit(tenPow1_digit));
+		tab_str__indexAssign(result, 2LL, ubyt__lastHexDigit(rest));
+	} else if(tenPow1_digit){
+		result = MStr__new(2LL);
+		tab_str__indexAssign(result, 0LL, ubyt__lastHexDigit(tenPow1_digit));
+		tab_str__indexAssign(result, 1LL, ubyt__lastHexDigit(rest));
+	} else {
+		result = MStr__new(1LL);
+		tab_str__indexAssign(result, 0LL, ubyt__lastHexDigit(rest));
+	}
+	return result;
 }

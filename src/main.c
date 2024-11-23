@@ -192,7 +192,7 @@ byt zmain(tab* args) {
 			if(outputPath == NULL) { outputPath = str__add(Path__name(inputPath), s(".nc.p")); }
 			IO__writeFile(
 				outputPath,
-				preprocess(inputPath, includeDirs) //runcc1(argc, argv, input, NULL)
+				preprocess(inputPath, includeDirs)
 			);
 		}
 
@@ -210,7 +210,7 @@ byt zmain(tab* args) {
 			if(outputPath == NULL) { outputPath = str__add(Path__name(inputPath), s(".o")); }
 			IO__writeFile(
 				outputPath,
-				compile(inputPath, includeDirs, SDLDeps, usePIC)
+				compile(inputPath, includeDirs) //, SDLDeps, usePIC)
 			);
 		}
 
