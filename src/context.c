@@ -353,7 +353,7 @@ typedef struct {
 // ---------------- TOOLS ----------------
 
 //locations
-void loc__print(loc* l) {
+void loc__printLF(loc* l) {
 	str* lineNbrStr   = ulng__toStr(l->lineNbr);
 	str* columnNbrStr = ulng__toStr(l->columnNbr);
 
@@ -362,7 +362,7 @@ void loc__print(loc* l) {
 	IO__printChr(':');
 	IO__print(lineNbrStr);
 	IO__printChr(':');
-	IO__print(columnNbrStr);
+	IO__printLF(columnNbrStr);
 
 	//free
 	str__free(lineNbrStr);

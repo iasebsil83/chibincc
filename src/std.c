@@ -392,7 +392,7 @@ void IO__print(str* s) {
 		IO__printChr(str__index(s,i));
 	}
 }
-void IO__println(str* s) {
+void IO__printLF(str* s) {
 	IO__print(s);
 	IO__printChr('\n');
 }
@@ -502,16 +502,16 @@ str Err__ERROR_HEADER = { 8, "[ERROR] " };
 void Err__debug(str* msg) {
 	#ifdef Err__DEBUG
 	IO__print(&Err__DEBUG_HEADER);
-	IO__println(msg);
+	IO__printLF(msg);
 	#endif
 }
 void Err__warning(str* msg) {
 	IO__print(&Err__WARNN_HEADER);
-	IO__println(msg);
+	IO__printLF(msg);
 }
 void Err__error(str* msg, ubyt err) {
 	IO__print(&Err__WARNN_HEADER);
-	IO__println(msg);
+	IO__printLF(msg);
 	Syscall__exit(err);
 }
 

@@ -1,40 +1,5 @@
 #include "chibicc.h"
 
-// Input file
-static File *current_file;
-
-// A list of all input files.
-static File **input_files;
-
-//whether current position is at Beginning Of Line
-static bool atBOL;
-
-//whether current position follows a space character
-static bool preceededBySpace;
-
-// Reports an error and exit.
-void error(char *fmt, ...) {
-  va_list ap;
-  va_start(ap, fmt);
-  vfprintf(stderr, fmt, ap);
-  fprintf(stderr, "\n");
-  exit(1);
-}
-
-void error_tok(Token *tok, char *fmt, ...) {
-  va_list ap;
-  va_start(ap, fmt);
-  verror_at(tok->file->name, tok->file->contents, tok->line_no, tok->loc, fmt, ap);
-  exit(1);
-}
-
-void warn_tok(Token *tok, char *fmt, ...) {
-  va_list ap;
-  va_start(ap, fmt);
-  verror_at(tok->file->name, tok->file->contents, tok->line_no, tok->loc, fmt, ap);
-  va_end(ap);
-}
-
 // Consumes the current token if it matches `op`.
 bool equal(Token *tok, char *op) {
   return memcmp(tok->loc, op, tok->len) == 0 && op[tok->len] == '\0';
@@ -621,7 +586,7 @@ Token *tokenize(str* filename, str* inputText, vocab* v) {
       p += cur->len;
       continue;
     }
-
+		loc__printLine(ctx->currentLocation);
 		Err__error(s("Invalid token");
 	}
 

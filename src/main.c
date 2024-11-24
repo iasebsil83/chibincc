@@ -37,8 +37,8 @@ byt MODE__OBJ = '\x02';
 
 //help menu
 void printUsage(tab* opts) {
-	IO__println(s("Usage: chibincc [options] <files>..."));
-	IO__println(s("\nCompile NC source code into object format.\n"));
+	IO__printLF(s("Usage: chibincc [options] <files>..."));
+	IO__printLF(s("\nCompile NC source code into object format.\n"));
 	Opt__printUsage(opts);
 	Syscall__exit(Err__SUCCESS);
 }
@@ -185,7 +185,7 @@ byt zmain(tab* args) {
 		//debug
 		IO__print(s("Compiling file '"));
 		IO__print(inputPath);
-		IO__println(s("' {"));
+		IO__printLF(s("' {"));
 
 		//preprocessor
 		if(mode == MODE__PRE) {
@@ -215,7 +215,7 @@ byt zmain(tab* args) {
 		}
 
 		//debug
-		IO__println(s("}"));
+		IO__printLF(s("}"));
 	}
 
 	//terminated successfully
