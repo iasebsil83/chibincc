@@ -351,6 +351,7 @@ istr* IStr__fromStr(str* s) {
 	i->index = -1LL;
 	return i;
 }
+void istr__free(istr* i) { free(i); }
 boo istr__forward(istr* i, ulng step) {
 	if((i->index + step) >= i->s->length) { return true; } //could not forward => ret true
 	i->index += step;
@@ -1081,4 +1082,55 @@ str* ulng__toStr(ulng u) {
 		tab_str__indexAssign(result, 0LL, ubyt__lastHexDigit(rest));
 	}
 	return result;
+}
+
+
+
+
+// ---------------- PARSING ----------------
+
+//location
+typedef struct {
+	str*  filename;
+	ulng  lineNbr;
+	ulng  columnNbr;
+	istr* content;
+} Parsing__ctx;
+Parsing__ctx* Parsing__Ctx__new(str* filename, str* content) {
+	Parsing__ctx* ctx = malloc(sizeof(Parsing__ctx));
+	ctx->filename  = filename;
+	ctx->lineNbr   = 1ULL;
+	ctx->columnNbr = 1ULL;
+	ctx->content   = IStr__fromStr(content);
+	return ctx;
+}
+chr Parsing__ctx__get(Parsing__ctx* ctx) { return istr__get(cxt->content); }
+//void Parsing__ctx__set(Parsing__ctx* ctx, chr value) { istr__set(cxt->content, value); } //not used yet
+boo Parsing__ctx__inc(Parsing__ctx* ctx) {
+	if(istr__inc(ctx->content)) { return true; } //can't go further => can't go further
+
+	//forward localization elements
+	chr c = istr__get(ctx->content);
+	if(c == '\n') { ctx->lineNbr++; ctx->columnNbr = 0ULL; } //new line
+	else          {                 ctx->columnNbr++;      } //regular character
+	return false;
+}
+void Parsing__ctx__free(Parsing__ctx* ctx) {
+	istr__free(ctx->content);
+	free(ctx);
+}
+void Parsing__ctx__printLocationLF(Parsing_ctx* ctx) {
+	str* lineNbrStr   = ulng__toStr(ctx->lineNbr);
+	str* columnNbrStr = ulng__toStr(ctx->columnNbr);
+
+	//output
+	IO__print(ctx->filename);
+	IO__printChr(':');
+	IO__print(lineNbrStr);
+	IO__printChr(':');
+	IO__printLF(columnNbrStr);
+
+	//free
+	str__free(lineNbrStr);
+	str__free(columnNbrStr);
 }

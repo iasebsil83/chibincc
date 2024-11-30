@@ -1,3 +1,4 @@
+/*
 #include "chibicc.h"
 
 // Consumes the current token if it matches `op`.
@@ -23,23 +24,6 @@ bool consume(Token **rest, Token *tok, char *str) {
 
 static bool startswith(char *p, char *q) {
   return strncmp(p, q, strlen(q)) == 0;
-}
-
-// Read an identifier and returns the length of it.
-// If p does not point to a valid identifier, 0 is returned.
-static int read_ident(char *start) {
-  char *p = start;
-  uint32_t c = decode_utf8(&p, p);
-  if (!is_ident1(c))
-    return 0;
-
-  for (;;) {
-    char *q;
-    c = decode_utf8(&q, p);
-    if (!is_ident2(c))
-      return p - start;
-    p = q;
-  }
 }
 
 static int from_hex(char c) {
@@ -455,8 +439,7 @@ static uint32_t read_universal_char(char *p, int len) {
     c = (c << 4) | from_hex(p[i]);
   }
   return c;
-}
-
+}*/
 
 
 
@@ -476,8 +459,8 @@ static uint32_t read_universal_char(char *p, int len) {
 // ---------------- IMPORTATIONS ----------------
 
 //lexicon
-#include "vocabulary.c"
-#include "data_structures.c"
+//#include "vocabulary.c"
+#include "context.c"
 
 
 
@@ -487,23 +470,17 @@ static uint32_t read_universal_char(char *p, int len) {
 // ---------------- TOKENIZE ----------------
 
 //token analysis
-Token* detectedToken(byt id, istr* text, boo atBOL, boo preceededBySpace) {
-	Token* tok = malloc(sizeof(Token));
-	tok->id               = id;
-	tok->atBOL            = atBOL;
-	tok->preceededBySpace = preceededBySpace;
+/*token* detectedPotentialToken(byt id, ulng value, NCContext* ncc) {
+	token* tok = Token__new(id, value, ncc);
 	switch(id) {
 
 		//number
 		case TOKEN__PP_NUM:
-			tok->value  = ; //copy raw numbers for the moment
-			tok->length = ;
+			tok->value = Str__new(); //copy raw numbers for the moment
 		break;
 
 		//
 		case TOKEN__:
-			tok->value  = ;
-			tok->length = ;
 		break;
 
 		//undefined
@@ -511,86 +488,131 @@ Token* detectedToken(byt id, istr* text, boo atBOL, boo preceededBySpace) {
 			Err__error(s("Invalid TOKEN ID"), Err__FAILURE);
 	}
 	return tok;
-}
+}*/
 
+
+
+//error function
+void Tokenization__error(Parsing__ctx* ctx, str* s) {
+	Parsing__ctx__printLocationLF(ctx);
+	Err__error(s);
+}
 
 
 //parsing entry point
-Token *tokenize(str* filename, str* inputText, vocab* v) {
-	istr* input = IStr__fromStr(inputText);
-	lst* tokens = Lst__new();
-
-	//save filename for assembler .file directive <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< LATER
-	//static int file_no;
-	//File* file = new_file(path, file_no + 1, p);
-
-	//save filename for assembler .file directive <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< LATER
-	//input_files = realloc(input_files, sizeof(char *) * (file_no + 2));
-	//input_files[file_no] = file;
-	//input_files[file_no + 1] = NULL;
-	//file_no++;
-
-	//current_file = file; //<<<<<<<<<<<<<<<<<<<<<<<<<<<<< useful ?
-
-	//parsing context
-	PPContext* ctx = malloc(sizeof(PPContext));
-	ctx->atBOL            = true;
-	ctx->preceededBySpace = false;
-	ctx->currentLocation  = malloc(sizeof(loc));
-	ctx->currentLocation->filename = 
-	boo  stillRemaining   = true;
+lst* Tokenization__run(str* filename, str* inputText) {
+	lst*          tokens = Lst__new();
+	Parsing__ctx* ctx    = Parsing__ctx__new(filename, inputText);
 
 	//as long as we got things to read
-	while(stillRemaining) {
-		if(istr__inc(input)) { break; }
-		chr c = istr__get(input)
+	while(true) {
+		if(Parsing__ctx__inc(ctx)) { break; }
+		chr c = Parsing__ctx__get(ctx);
 
-		//skip spaces => but keep the information we found some !
-		if(c == ' ') { preceededBySpace = true; continue; }
+		if(c == '\t') { continue; }
 
-		//number literal
-		if(iam__chr(c, v.numbers)) {
-			lst__append(tokens, (byt*)newToken(TK_PP_NUM, input->s));
-			atBOL            = false;
-			preceededBySpace = false;
+		//1st rank : ROLE
+		switch(c) {
+
+
+
+			//ignore tabulations
+			case '\t': break;
+
+
+
+			//DEF
+			case 'd':
+
+				//2nd rank : DEF SCOPE
+				if(Parsing__ctx__inc(ctx)) { Tokenization__error(ctx, s("Missing DEF SCOPE.")); }
+				c = Parsing__ctx__get(ctx);
+				switch(c) {
+					case 'i': case 'x': case 's':
+
+						//3rd rank : DEF SCOPE KIND
+						if(Parsing__ctx__inc(ctx)) { Tokenization__error(ctx, s("Missing DEF SCOPE KIND.")); }
+						switch(Parsing__ctx__get(ctx)){
+							case 'c': lst__append(tokens, (byt*)newDefinitionToken_TypeCopy( ctx, c)); break;
+							case 's': lst__append(tokens, (byt*)newDefinitionToken_Structure(ctx, c)); break;
+							case 'f': lst__append(tokens, (byt*)newDefinitionToken_Function( ctx, c)); break;
+							case 'd': lst__append(tokens, (byt*)newDefinitionToken_DataItem( ctx, c)); break;
+							default: Tokenization__error(ctx, s("Invalid DEF SCOPE KIND given."));
+						}
+					break;
+					default: Tokenization__error(ctx, s("Invalid DEF SCOPE given."));
+				}
+			break
+
+
+
+			//EXE
+			case 'x':
+
+				//2nd rank : EXE STATEMENT
+				if(Parsing__ctx__inc(ctx)) { Tokenization__error(ctx, s("Missing EXE STATEMENT.")); }
+				switch(Parsing__ctx__get(ctx);) {
+					case 'i': lst__append(tokens, (byt*)newExecutionToken_If(      ctx)); break;
+					case 'f': lst__append(tokens, (byt*)newExecutionToken_For(     ctx)); break;
+					case 'w': lst__append(tokens, (byt*)newExecutionToken_While(   ctx)); break;
+					case 's': lst__append(tokens, (byt*)newExecutionToken_Switch(  ctx)); break;
+					case 'b': lst__append(tokens, (byt*)newExecutionToken_Break(   ctx)); break;
+					case 'c': lst__append(tokens, (byt*)newExecutionToken_Continue(ctx)); break;
+					case 'r': lst__append(tokens, (byt*)newExecutionToken_Return(  ctx)); break;
+					case 'v': lst__append(tokens, (byt*)newExecutionToken_VFC(     ctx)); break;
+					//case '': lst__append(tokens, (byt*)newExecutionToken_(ctx)); break;
+					//case '': lst__append(tokens, (byt*)newExecutionToken_(ctx)); break;
+					//case '': lst__append(tokens, (byt*)newExecutionToken_(ctx)); break;
+					//case '': lst__append(tokens, (byt*)newExecutionToken_(ctx)); break;
+					//case '': lst__append(tokens, (byt*)newExecutionToken_(ctx)); break;
+					//case '': lst__append(tokens, (byt*)newExecutionToken_(ctx)); break;
+					//case '': lst__append(tokens, (byt*)newExecutionToken_(ctx)); break;
+					case 'a': lst__append(tokens, (byt*)newExecutionToken_Assign(  ctx)); break;
+					default: Tokenization__error(ctx, s("Invalid EXE STATEMENT given."));
+				}
+			break;
+
+
+
+			//undefined
+			default: Tokenization__error(ctx, s("Invalid ROLE given."));
+		}
+	}
+
+	//final result
+	return tokens;
+}
+
+
+
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<< semi-old stuff
+/*
+		if(Oiam__chr_str(c, v.numbers)) {
+			lst__append(tokens, (byt*)newToken(TK_PP_NUM, ctx));
+			ctx->preceededBySpace = false;
 			continue;
 		}
 
-    // String literal
-    if (*p == '"') {
-      cur = cur->next = read_string_literal(p, p);
-      p += cur->len;
-      continue;
-    }
+		//identifier or keyword
+		int ident_len = read_ident(p);
+		if(ident_len) {
+			cur = cur->next = new_token(TK_IDENT, p, p + ident_len);
+			p += cur->len;
+			continue;
+		}
 
-    // Character literal
-    if (*p == '\'') {
-      cur = cur->next = read_char_literal(p, p, ty_int);
-      cur->val = (char)cur->val;
-      p += cur->len;
-      continue;
-    }
-
-    // Identifier or keyword
-    int ident_len = read_ident(p);
-    if (ident_len) {
-      cur = cur->next = new_token(TK_IDENT, p, p + ident_len);
-      p += cur->len;
-      continue;
-    }
-
-    // Punctuators
-    int punct_len = read_punct(p);
-    if (punct_len) {
-      cur = cur->next = new_token(TK_PUNCT, p, p + punct_len);
-      p += cur->len;
-      continue;
-    }
-		loc__printLine(ctx->currentLocation);
-		Err__error(s("Invalid token");
+		//punctuators
+		int punct_len = read_punct(p);
+		if (punct_len) {
+			cur = cur->next = new_token(TK_PUNCT, p, p + punct_len);
+			p += cur->len;
+			continue;
+		}
+		Parsing__ctx__printLocationLF(ctx->pc);
+		Err__error(s("Invalid syntax for preprocessing tokenization.");
 	}
 
-  cur = cur->next = new_token(TK_EOF, p, p);
-  add_line_numbers(head.next);
-  return head.next;
+	//return tokens
+	return tokens;
 }
+*/

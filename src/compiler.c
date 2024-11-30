@@ -41,16 +41,17 @@ str* compile(str* inputPath, tab* includeDirs) { //, tab* SDLDeps, boo usePIC) {
 	IO__printLF(s("  }"));
 
 	//preprocess first
-	tab_tok* pproc_tokens = preprocess(inputPath, includeDirs);
+	lst* pproc_tokens = preprocess(inputPath, includeDirs);
 
 	//compile
 	str* text = buildAssembly(pproc_tokens);
-	tab_tok__free(pproc_tokens);
+	for(ulng t=0ULL; t < lst__length(pproc_tokens); t++) { token__free(lst__index(pproc_tokens, t)); }
+	lst__free(pproc_tokens, false);
 
 	//return result
 	return result;
 }
-  Obj *prog = parse(tok);
+/*  Obj *prog = parse(tok);
 
   // Open a temporary output buffer.
   char *buf;
@@ -65,3 +66,4 @@ str* compile(str* inputPath, tab* includeDirs) { //, tab* SDLDeps, boo usePIC) {
   FILE *out = open_file(output_file);
   fwrite(buf, buflen, 1, out);
   fclose(out);
+*/

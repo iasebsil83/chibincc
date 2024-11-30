@@ -1,0 +1,300 @@
+t0 Nested Calls Syntax Specification
+
+l This document describes briefly the structure of the \bN\bested \bC\balls (NC) syntax.
+l It also gives elements on how chibincc (first official NC compiler) parses it.
+
+b
+
+%
+
+
+
+
+
+
+t1 Presentation
+
+t2 Brief description
+
+p The NC syntax, as the name implies, is a programming syntax (or language) consisting in function calls only (or almost). \
+NC is very \blow-level\b and \bstrict\b. \
+We can even say it is \cff0000highly restrictive\c and so not really suited for \uhuman development\u, \
+but rather to be generated as the output of a higher-level compiler for example.
+
+p The objective of this syntax is to have a low-level interface with assembly code, as the C programming language does, \
+but also to be \bsimple\b to parse without any \uambiguity\u and \uundefined behavior\u.
+
+
+
+t2 NC content and Parsing
+
+p The NC syntax is text-based and also ASCII-only compliant. \
+That means every single byte in an NC code must be ASCII or the full code will be rejected.
+
+p \u\bDISCLAIMER :\b\u That doesn't mean non-ASCII characters cannot be used as values in our program. \
+Any literal value can be represented in NC and this is made using only ASCII characters.
+
+p NC intsruction are read line by line, one instruction per line, no exception. \
+No "comment" feature exists (=> no comments allowed). \
+Indent is allowed for better visualisation and debugging however it is not used for any purpose in the parsing process. \
+Empty lines are ignored.
+
+p Because NC is text-based, it is easier to debug it than if we were using binary characters or specific encodings. \
+However, each NC instruction is composed of \useveral fixed-length fields\u, meaning we \udon't need\u to separate them \
+to have a working parsable content. \
+For this reason, at first sight, you may find NC completely unreadable for human (hard to debug). \
+This is why I \b\cff0000highly\c\b recommend to use an NC syntax coloration in your text editor when reading NC code.
+
+
+
+t2 Generic VALUE items
+
+p There is one item we must present to understand how some NC instruction fields are parsed : VALUES. \
+When expecting to have a value, the first character will be read to guess what kind of value we have. \
+Depending on this, our value can be either a \bliteral value\b, a \bdata item name\b or a \bnon-void returning function call (!vfc)\b.
+
+
+t3 Literal value
+
+p If it is a number, we allow digits \m1\m, \m2\m, \m4\m and \m8\m to tell whether the following will be a literal value on 1, 2, 4 or 8 bytes. \
+The following value must be written in \u\blowercase hexadecimal\b\u so the lengths of such values will be 2, 4, 8 and 16 digits. \
+\c\bEvery digit is required every time.\b\c
+
+
+t3 Data Item name
+
+p If the first character of a value is a letter (lowercase \band\b uppercase included), one of the 2 remaining possibilities can match. \
+Continuing to read our value, from the second character to the end, we only allow to have both letters \u\band\b\u numbers as current value name. \
+As soon as we reach the end of our value definition (given delimiter, end of line, ...), the resulted name will be considerated as a data item giving its value. \
+By the way, because we need to have a first character to detect whether our value is a data item or not, we cannot have empty data item names.
+
+
+t3 Non-void Returning Function Call
+
+p Finally, when reading a value name as for data item matching, a last case can happen. \
+If the next character following our name is an openning parenthesis \m(\m, we are now having a non-void returning function call with the given value name as function name. \
+By the way, because we need to have a first character to detect whether our value is a function call or not, we cannot have empty function names.
+
+p One \bhighly important thing\b about function calls is that they can be \unested\u together with other values. \
+This is basically the main reason why this syntax is called NC and the main principle behind it. \
+After a function's openning parenthesis, we must have an end of line. <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< MAYBE NOT ?
+
+l Now that we saw that special item and how it gets parsed, we can get into more details for each NC instruction.
+
+
+
+
+
+
+t1 Full NC description
+
+t2 First rank : ROLE
+
+p Each line must start with a ROLE trigram. \
+Depending on that, the rest of the line will be analyzed differently. \
+- \mdef\m : Definition
+Definitions of data structures to be taken into account during compilation \
+as well as element to be stored in the resulting executable (global) or not (local).
+-
+- \mexe\m : Execution
+Very basic runnable instruction using literal values or already defined elements.
+-
+
+p In chibincc, the ROLE information is stored as part of the instruction ID : \
+1st bit is 0 for DEF, 1 for EXE.
+
+
+
+t2 Second rank : DEF SCOPE
+
+p Following a DEF, another trigram is expected : its SCOPE.
+- \mint\m : Intern
+Definition is accessible only within the current program.
+-
+- \mext\m : Extern
+Definition does not exist in the current program, it refers to another program's shared definition.
+-
+- \mshd\m : Shared
+Definition is accessible within the current program and also by other external programs.
+-
+
+p In chibincc, the SCOPE information is stored as part of the instruction ID : \
+2nd & 3rd bits are used :
+- \m00\m : \mint\m
+-
+- \m01\m : \mext\m
+-
+- \m10\m : \mshd\m
+-
+- \m11\m : undefined (will cause an "Undefined instruction ID" error)
+-
+
+
+
+t2 Second rank: EXE STATEMENT
+
+p Following an EXE, another trigram is expected : the STATEMENT.
+- \mif_\m : Conditional statement
+-
+- \mfor\m : For loop
+-
+- \mwhi\m : While loop
+-
+- \mswi\m : Switch statement
+-
+- \mbrk\m : Break jump
+-
+- \mctn\m : Continue jump
+-
+- \mret\m : Return jump
+-
+- \mvfc\m : Void Function Call
+-
+- \m\m : 
+-
+- \m\m : 
+-
+- \m\m : 
+-
+- \m\m : 
+-
+- \m\m : 
+-
+- \m\m : 
+-
+- \m\m : 
+-
+- \masg\m : Assignation
+-
+
+p In chibincc, the STATEMENT information is stored as part of the instruction ID : \
+2nd, 3rd, 4th & 5th bits are used :
+- \m0000\m : \mif_\m
+-
+- \m0001\m : \mfor\m
+-
+- \m0010\m : \mwhi\m
+-
+- \m0011\m : \mswi\m
+-
+- \m0100\m : \mbrk\m
+-
+- \m0101\m : \mctn\m
+-
+- \m0110\m : \mret\m
+-
+- \m0111\m : \mvfc\m
+-
+- \m1000\m : \m\m
+-
+- \m1001\m : \m\m
+-
+- \m1010\m : \m\m
+-
+- \m1011\m : \m\m
+-
+- \m1100\m : \m\m
+-
+- \m1101\m : \m\m
+-
+- \m1110\m : \m\m
+-
+- \m1111\m : \masg\m
+-
+
+
+
+t2 Third rank : DEF SCOPE KIND
+
+p Following a DEF SCOPE, another trigram is expected : its KIND.
+- \mcpy\m : Copy type
+-
+- \mstc\m : Structure type
+-
+- \mfct\m : Function
+-
+- \mdat\m : Data item
+-
+
+p In chibincc, the KIND information is stored as part of the instruction ID : \
+4th & 5th bits are used :
+- \m00\m : \mcpy\m
+-
+- \m01\m : \mstc\m
+-
+- \m10\m : \mfct\m
+-
+- \m11\m : \mdat\m
+-
+
+
+
+
+t2 Third rank : EXE STATEMENT details
+
+t3 IF_ statement
+
+"
+EXE if_ <condition> <block> [next]
+"
+l If field "next" exists, it must be \melf\m or \mels\m :
+- \mEXE if_<condition><block>els<els_block>\m
+No additionnal "next" field allowed.
+-
+- \mEXE if_ <condition> <block> elf <condition> <elf_block> [next]\m
+Field "next" works the same as before (several chains allowed).
+-
+p Condition can be either a VALUE or a function call which means we . \
+and blocks can hold a certain number of instructions themselves so we must use delimiters to know where to end reading them. \
+Moreover, beginning from the condition to the very end, we have a succession of blocks once over 2. \
+ach block is delimited by a starting \m{\m and its stopping delimiter \m}\m.
+
+t3 . statement
+
+"
+EXE xxx <condition> <block>
+"
+
+
+
+t2 Fourth rank : DEF SCOPE KIND details
+
+t3 
+
+DEF SCOPE cpy <type.src> <type.dst>
+
+t3 
+
+DEF SCOPE stc {...}
+
+t3 
+
+DEF SCOPE fct <name> <return_type> <params>
+
+t3 
+
+DEF SCOPE dat <behavior> <name> <value>
+
+
+
+
+
+
+tu Last Note
+
+p Please consider that NC is a FREE and OPEN SOURCE syntax completely architecture independant. \
+Even if NC seems to be quite simple in general, the efforts to make a working and parsing-optimized syntax are to be considerated \
+as those simplifications \bare\b what makes an NC-to-obj/ELF compiler that much efficient comparing to regular C compilers.
+
+l This syntax as well as its specification took a certain amount of time, energy and thinking to be achieved.
+
+lc Please respect the work done.
+
+b
+
+b
+
+l Thanks for reading.
+l I hope you will enjoy using this syntax to enhance the way we manage low-level programming nowadays (2024).
+
+l Let's Code !\arBy I.A.

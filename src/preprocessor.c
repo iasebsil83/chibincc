@@ -1,7 +1,7 @@
 // ---------------- DEFINITIONS ----------------
 
 //internal structures
-#include "tokenize.c"
+#include "tokenization.c"
 
 
 
@@ -10,7 +10,7 @@
 // ---------------- PREPROCESS ----------------
 
 //preprocess
-tab* preprocess(str* inputPath, tab* includeDirs) {
+lst* preprocess(str* inputPath, tab* includeDirs) {
 
 	//debug
 	IO__printLF(s("  Preprocessing {"));
@@ -26,10 +26,10 @@ tab* preprocess(str* inputPath, tab* includeDirs) {
 	str* inputText = IO__readFile(inputPath);
 
 	//load vocabulary
-	vocab* v = initVocab();
+	//vocab* v = initVocab();
 
 	//tokenize text
-	tab* result = tokenize(inputPath, inputText, v);
+	lst* result = Tokenization__run(inputPath, inputText); //, v);
 	free(inputText);
 
 	//return token table
