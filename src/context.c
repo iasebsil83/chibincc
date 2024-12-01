@@ -321,42 +321,43 @@ typedef struct {
 
 
 //NC syntax : ROLE
-const ubyt NC__ROLE_DEFINITION '\x00'
-const ubyt NC__ROLE_EXECUTION  '\x80'
+const ubyt NC__ROLE_DEFINITION = '\x00';
+const ubyt NC__ROLE_EXECUTION  = '\x80';
 
 //NC syntax : DEF SCOPE
-const ubyt NC__DEF_SCOPE_INTERN '\x00'
-const ubyt NC__DEF_SCOPE_EXTERN '\x40'
-const ubyt NC__DEF_SCOPE_SHARED '\x20'
+const ubyt NC__DEF_SCOPE_INTERN = '\x00';
+const ubyt NC__DEF_SCOPE_EXTERN = '\x40';
+const ubyt NC__DEF_SCOPE_SHARED = '\x20';
+const ubyt NC__DEF_SCOPE_LOCAL  = '\x60';
 
 //NC syntax : EXE STATEMENT
-const ubyt NC__EXE_STATEMENT_IF       '\x00'
-const ubyt NC__EXE_STATEMENT_FOR      '\x08'
-const ubyt NC__EXE_STATEMENT_WHILE    '\x10'
-const ubyt NC__EXE_STATEMENT_SWITCH   '\x18'
-const ubyt NC__EXE_STATEMENT_BREAK    '\x20'
-const ubyt NC__EXE_STATEMENT_CONTINUE '\x28'
-const ubyt NC__EXE_STATEMENT_RETURN   '\x30'
-const ubyt NC__EXE_STATEMENT_VFC      '\x38'
-const ubyt NC__EXE_STATEMENT_UNDEF1   '\x40'
-const ubyt NC__EXE_STATEMENT_UNDEF2   '\x48'
-const ubyt NC__EXE_STATEMENT_UNDEF3   '\x50'
-const ubyt NC__EXE_STATEMENT_UNDEF4   '\x58'
-const ubyt NC__EXE_STATEMENT_UNDEF5   '\x60'
-const ubyt NC__EXE_STATEMENT_UNDEF6   '\x68'
-const ubyt NC__EXE_STATEMENT_UNDEF7   '\x70'
-const ubyt NC__EXE_STATEMENT_ASSIGN   '\x78'
+const ubyt NC__EXE_STATEMENT_IF       = '\x00';
+const ubyt NC__EXE_STATEMENT_FOR      = '\x08';
+const ubyt NC__EXE_STATEMENT_WHILE    = '\x10';
+const ubyt NC__EXE_STATEMENT_SWITCH   = '\x18';
+const ubyt NC__EXE_STATEMENT_BREAK    = '\x20';
+const ubyt NC__EXE_STATEMENT_CONTINUE = '\x28';
+const ubyt NC__EXE_STATEMENT_RETURN   = '\x30';
+const ubyt NC__EXE_STATEMENT_VFC      = '\x38';
+const ubyt NC__EXE_STATEMENT_UNDEF1   = '\x40';
+const ubyt NC__EXE_STATEMENT_UNDEF2   = '\x48';
+const ubyt NC__EXE_STATEMENT_UNDEF3   = '\x50';
+const ubyt NC__EXE_STATEMENT_UNDEF4   = '\x58';
+const ubyt NC__EXE_STATEMENT_UNDEF5   = '\x60';
+const ubyt NC__EXE_STATEMENT_UNDEF6   = '\x68';
+const ubyt NC__EXE_STATEMENT_UNDEF7   = '\x70';
+const ubyt NC__EXE_STATEMENT_ASSIGN   = '\x78';
 
 //NC syntax : DEF SCOPE KIND
-const ubyt NC__DEF_SCOPE_KIND_COPY      '\x00'
-const ubyt NC__DEF_SCOPE_KIND_STRUCTURE '\x08'
-const ubyt NC__DEF_SCOPE_KIND_FUNCTION  '\x10'
-const ubyt NC__DEF_SCOPE_KIND_DATA      '\x18'
+const ubyt NC__DEF_SCOPE_KIND_COPY      = '\x00';
+const ubyt NC__DEF_SCOPE_KIND_STRUCTURE = '\x08';
+const ubyt NC__DEF_SCOPE_KIND_FUNCTION  = '\x10';
+const ubyt NC__DEF_SCOPE_KIND_DATA      = '\x18';
 
 //tokens
 typedef struct {
 	ubyt          id;
-	ulng          value;
+	ulng          body;
 	Parsing__ctx* ctx;
 } token;
 
@@ -375,13 +376,6 @@ NCContext* NCContext__new(str* filename, str* content) {
 	ncc->pc               = Parsing__ctx__new(filename, content); //generic parsing context
 	return ncc;
 }
-NCContext* NCContext__copy(NCContext* a) {
-	NCContext* b = NCContext__new(a->filename, a->content->s);
-	b->pc->lineNbr      = a->pc->lineNbr;      //generic elements
-	b->pc->columnNbr    = a->pc->columnNbr;
-	b->preceededBySpace = a->preceededBySpace; //specific elements
-	return b;
-}
 void NCContext__free(NCContext* ncc) {
 	Parsing__ctx__free(ncc->pc);
 	free(ncc);
@@ -390,11 +384,10 @@ void NCContext__free(NCContext* ncc) {
 
 
 //token
-token* Token__new(Parsing__ctx* ctx, byt id, ulng value) {
+token* Token__new(Parsing__ctx* ctx, byt id) {
 	token* t = malloc(sizeof(token));
-	t->id    = id;
-	t->value = value;
-	t->ctx   = Parsing__ctx__copy(ctx);
+	t->id  = id;
+	t->ctx = Parsing__ctx__copy(ctx);
 	return t;
 }
 void token__free(token* t) {

@@ -459,7 +459,6 @@ static uint32_t read_universal_char(char *p, int len) {
 // ---------------- IMPORTATIONS ----------------
 
 //lexicon
-//#include "vocabulary.c"
 #include "context.c"
 
 
@@ -467,42 +466,131 @@ static uint32_t read_universal_char(char *p, int len) {
 
 
 
-// ---------------- TOKENIZE ----------------
+// ---------------- TOOLS ----------------
 
-//token analysis
-/*token* detectedPotentialToken(byt id, ulng value, NCContext* ncc) {
-	token* tok = Token__new(id, value, ncc);
-	switch(id) {
+//read body including nested instructions themselves
+ulng readWholeInstructionBody(Parsing__ctx* ctx) {
+	istr* icontent   = ctx->icontent;
+	ulng  startIndex = icontent->index;
 
-		//number
-		case TOKEN__PP_NUM:
-			tok->value = Str__new(); //copy raw numbers for the moment
-		break;
-
-		//
-		case TOKEN__:
-		break;
-
-		//undefined
-		defaut:
-			Err__error(s("Invalid TOKEN ID"), Err__FAILURE);
+	//end of line => end of instruction
+	while(true) {
+		if(Parsing__ctx__inc(ctx)) { break; }
+		chr c = Parsing__ctx__get(ctx);
+		if(c == '\n'){ break; }
 	}
+
+	//update value now that we have it
+	ulng bodyLength = icontent->index - startIndex;
+	str* body       = Str__new(bodyLength);
+	for(ulng i=0ULL; i < bodyLength; i++) { str__indexAssign(body, i, str__index(icontent->s, startIndex + i)); }
+
+	//return token
+	return (ulng)body;
+}
+
+//specific token reading
+token* newDefinitionToken_TypeCopy(Parsing__ctx* ctx, ubyt scope) {
+	token* tok = Token__new(ctx, NC__ROLE_DEFINITION | scope | NC__DEF_SCOPE_KIND_COPY);
+	tok->body  = readWholeInstructionBody(ctx);
 	return tok;
-}*/
+}
+
+token* newDefinitionToken_Structure(Parsing__ctx* ctx, ubyt scope) {
+	token* tok = Token__new(ctx, NC__ROLE_DEFINITION | scope | NC__DEF_SCOPE_KIND_STRUCTURE);
+	tok->body  = readWholeInstructionBody(ctx);
+	return tok;
+}
+
+token* newDefinitionToken_Function(Parsing__ctx* ctx, ubyt scope) {
+	token* tok = Token__new(ctx, NC__ROLE_DEFINITION | scope | NC__DEF_SCOPE_KIND_FUNCTION);
+	tok->body  = readWholeInstructionBody(ctx);
+	return tok;
+}
+
+token* newDefinitionToken_DataItem(Parsing__ctx* ctx, ubyt scope) {
+	token* tok = Token__new(ctx, NC__ROLE_DEFINITION | scope | NC__DEF_SCOPE_KIND_DATA);
+	tok->body  = readWholeInstructionBody(ctx);
+	return tok;
+}
+
+token* newExecutionToken_If(Parsing__ctx* ctx) {
+	token* tok = Token__new(ctx, NC__ROLE_EXECUTION | NC__EXE_STATEMENT_IF);
+	tok->body  = readWholeInstructionBody(ctx);
+	return tok;
+}
+
+token* newExecutionToken_For(Parsing__ctx* ctx) {
+	token* tok = Token__new(ctx, NC__ROLE_EXECUTION | NC__EXE_STATEMENT_FOR);
+	tok->body  = readWholeInstructionBody(ctx);
+	return tok;
+}
+
+token* newExecutionToken_While(Parsing__ctx* ctx) {
+	token* tok = Token__new(ctx, NC__ROLE_EXECUTION | NC__EXE_STATEMENT_WHILE);
+	tok->body  = readWholeInstructionBody(ctx);
+	return tok;
+}
+
+token* newExecutionToken_Switch(Parsing__ctx* ctx) {
+	token* tok = Token__new(ctx, NC__ROLE_EXECUTION | NC__EXE_STATEMENT_SWITCH);
+	tok->body  = readWholeInstructionBody(ctx);
+	return tok;
+}
+
+token* newExecutionToken_Break(Parsing__ctx* ctx) {
+	token* tok = Token__new(ctx, NC__ROLE_EXECUTION | NC__EXE_STATEMENT_BREAK);
+	tok->body  = readWholeInstructionBody(ctx);
+	return tok;
+}
+
+token* newExecutionToken_Continue(Parsing__ctx* ctx) {
+	token* tok = Token__new(ctx, NC__ROLE_EXECUTION | NC__EXE_STATEMENT_CONTINUE);
+	tok->body  = readWholeInstructionBody(ctx);
+	return tok;
+}
+
+token* newExecutionToken_Return(Parsing__ctx* ctx) {
+	token* tok = Token__new(ctx, NC__ROLE_EXECUTION | NC__EXE_STATEMENT_RETURN);
+	tok->body  = readWholeInstructionBody(ctx);
+	return tok;
+}
+
+token* newExecutionToken_VFC(Parsing__ctx* ctx) {
+	token* tok = Token__new(ctx, NC__ROLE_EXECUTION | NC__EXE_STATEMENT_VFC);
+	tok->body  = readWholeInstructionBody(ctx);
+	return tok;
+}
+
+token* newExecutionToken_Assign(Parsing__ctx* ctx) {
+	token* tok = Token__new(ctx, NC__ROLE_EXECUTION | NC__EXE_STATEMENT_ASSIGN);
+	tok->body  = readWholeInstructionBody(ctx);
+	return tok;
+}
+
 
 
 
 //error function
 void Tokenization__error(Parsing__ctx* ctx, str* s) {
-	Parsing__ctx__printLocationLF(ctx);
-	Err__error(s);
+	IO__printLF(Parsing__ctx__toStr(ctx));
+	Err__error(s, Err__FAILURE);
 }
+
 
 
 //parsing entry point
 lst* Tokenization__run(str* filename, str* inputText) {
 	lst*          tokens = Lst__new();
-	Parsing__ctx* ctx    = Parsing__ctx__new(filename, inputText);
+	Parsing__ctx* ctx    = Parsing__Ctx__new(filename, inputText);
+
+	str* ERR1 = s("Missing DEF SCOPE.");
+	str* ERR2 = s("Missing DEF SCOPE KIND.");
+	str* ERR3 = s("Invalid DEF SCOPE KIND given.");
+	str* ERR4 = s("Invalid DEF SCOPE given.");
+	str* ERR5 = s("Missing EXE STATEMENT.");
+	str* ERR6 = s("Invalid EXE STATEMENT given.");
+	str* ERR7 = s("Invalid ROLE given.");
 
 	//as long as we got things to read
 	while(true) {
@@ -512,6 +600,7 @@ lst* Tokenization__run(str* filename, str* inputText) {
 		if(c == '\t') { continue; }
 
 		//1st rank : ROLE
+		ubyt scope;
 		switch(c) {
 
 
@@ -525,24 +614,32 @@ lst* Tokenization__run(str* filename, str* inputText) {
 			case 'd':
 
 				//2nd rank : DEF SCOPE
-				if(Parsing__ctx__inc(ctx)) { Tokenization__error(ctx, s("Missing DEF SCOPE.")); }
+				if(Parsing__ctx__inc(ctx)) { Tokenization__error(ctx, ERR1); }
 				c = Parsing__ctx__get(ctx);
+				scope = '\xff'; //invalid value for DEF SCOPE
 				switch(c) {
-					case 'i': case 'x': case 's':
+					case 'i':
+						if(scope == '\xff') { scope = NC__DEF_SCOPE_INTERN; }
+					case 'x':
+						if(scope == '\xff') { scope = NC__DEF_SCOPE_EXTERN; }
+					case 's':
+						if(scope == '\xff') { scope = NC__DEF_SCOPE_SHARED; }
+					case 'l':
+						if(scope == '\xff') { scope = NC__DEF_SCOPE_LOCAL; }
 
 						//3rd rank : DEF SCOPE KIND
-						if(Parsing__ctx__inc(ctx)) { Tokenization__error(ctx, s("Missing DEF SCOPE KIND.")); }
+						if(Parsing__ctx__inc(ctx)) { Tokenization__error(ctx, ERR2); }
 						switch(Parsing__ctx__get(ctx)){
-							case 'c': lst__append(tokens, (byt*)newDefinitionToken_TypeCopy( ctx, c)); break;
-							case 's': lst__append(tokens, (byt*)newDefinitionToken_Structure(ctx, c)); break;
-							case 'f': lst__append(tokens, (byt*)newDefinitionToken_Function( ctx, c)); break;
-							case 'd': lst__append(tokens, (byt*)newDefinitionToken_DataItem( ctx, c)); break;
-							default: Tokenization__error(ctx, s("Invalid DEF SCOPE KIND given."));
+							case 'c': lst__append(tokens, (byt*)newDefinitionToken_TypeCopy( ctx, scope)); break;
+							case 's': lst__append(tokens, (byt*)newDefinitionToken_Structure(ctx, scope)); break;
+							case 'f': lst__append(tokens, (byt*)newDefinitionToken_Function( ctx, scope)); break;
+							case 'd': lst__append(tokens, (byt*)newDefinitionToken_DataItem( ctx, scope)); break;
+							default: Tokenization__error(ctx, ERR3);
 						}
 					break;
-					default: Tokenization__error(ctx, s("Invalid DEF SCOPE given."));
+					default: Tokenization__error(ctx, ERR4);
 				}
-			break
+			break;
 
 
 
@@ -550,8 +647,8 @@ lst* Tokenization__run(str* filename, str* inputText) {
 			case 'x':
 
 				//2nd rank : EXE STATEMENT
-				if(Parsing__ctx__inc(ctx)) { Tokenization__error(ctx, s("Missing EXE STATEMENT.")); }
-				switch(Parsing__ctx__get(ctx);) {
+				if(Parsing__ctx__inc(ctx)) { Tokenization__error(ctx, ERR5); }
+				switch(Parsing__ctx__get(ctx)) {
 					case 'i': lst__append(tokens, (byt*)newExecutionToken_If(      ctx)); break;
 					case 'f': lst__append(tokens, (byt*)newExecutionToken_For(     ctx)); break;
 					case 'w': lst__append(tokens, (byt*)newExecutionToken_While(   ctx)); break;
@@ -568,16 +665,24 @@ lst* Tokenization__run(str* filename, str* inputText) {
 					//case '': lst__append(tokens, (byt*)newExecutionToken_(ctx)); break;
 					//case '': lst__append(tokens, (byt*)newExecutionToken_(ctx)); break;
 					case 'a': lst__append(tokens, (byt*)newExecutionToken_Assign(  ctx)); break;
-					default: Tokenization__error(ctx, s("Invalid EXE STATEMENT given."));
+					default: Tokenization__error(ctx, ERR6);
 				}
 			break;
 
 
 
 			//undefined
-			default: Tokenization__error(ctx, s("Invalid ROLE given."));
+			default: Tokenization__error(ctx, ERR7);
 		}
 	}
+
+	str__free(ERR1);
+	str__free(ERR2);
+	str__free(ERR3);
+	str__free(ERR4);
+	str__free(ERR5);
+	str__free(ERR6);
+	str__free(ERR7);
 
 	//final result
 	return tokens;

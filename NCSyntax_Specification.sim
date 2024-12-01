@@ -65,7 +65,7 @@ t3 Data Item name
 
 p If the first character of a value is a letter (lowercase \band\b uppercase included), one of the 2 remaining possibilities can match. \
 Continuing to read our value, from the second character to the end, we only allow to have both letters \u\band\b\u numbers as current value name. \
-As soon as we reach the end of our value definition (given delimiter, end of line, ...), the resulted name will be considerated as a data item giving its value. \
+As soon as we reach an openning brace delimiter \m{\m or the end of line, the resulted name will be considerated as a data item giving its value. \
 By the way, because we need to have a first character to detect whether our value is a data item or not, we cannot have empty data item names.
 
 
@@ -79,7 +79,16 @@ p One \bhighly important thing\b about function calls is that they can be \unest
 This is basically the main reason why this syntax is called NC and the main principle behind it. \
 After a function's openning parenthesis, we must have an end of line. <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< MAYBE NOT ?
 
-l Now that we saw that special item and how it gets parsed, we can get into more details for each NC instruction.
+
+
+t2 Nested instructions
+
+p Some instructions may require to use parenthesis or brace delimiters \m(\m, \m)\m and \m{\m, \m}\m. \
+These are used to define whether a certain number of instructions are \u\bnested\b\u into some other. \
+However there is a tiny detail that deserves to pay attention with this.
+
+p We saw that parentheses are used for function calls : this is infact the only use they have. \
+We also saw that to detect a function call in values, we \bmust\b have the openning parenthesis to figure out the data item type
 
 
 
@@ -90,13 +99,13 @@ t1 Full NC description
 
 t2 First rank : ROLE
 
-p Each line must start with a ROLE trigram. \
+p Each line must start with a ROLE character. \
 Depending on that, the rest of the line will be analyzed differently. \
-- \mdef\m : Definition
+- \md\m : Definition
 Definitions of data structures to be taken into account during compilation \
 as well as element to be stored in the resulting executable (global) or not (local).
 -
-- \mexe\m : Execution
+- \mx\m : Execution
 Very basic runnable instruction using literal values or already defined elements.
 -
 
@@ -107,24 +116,27 @@ p In chibincc, the ROLE information is stored as part of the instruction ID : \
 
 t2 Second rank : DEF SCOPE
 
-p Following a DEF, another trigram is expected : its SCOPE.
-- \mint\m : Intern
+p Following a DEF, another character is expected : its SCOPE.
+- \mi\m : Intern
 Definition is accessible only within the current program.
 -
-- \mext\m : Extern
+- \mx\m : Extern
 Definition does not exist in the current program, it refers to another program's shared definition.
 -
-- \mshd\m : Shared
+- \ms\m : Shared
 Definition is accessible within the current program and also by other external programs.
+-
+- \ml\m : Local
+Definition is accessible within its local scope only.
 -
 
 p In chibincc, the SCOPE information is stored as part of the instruction ID : \
 2nd & 3rd bits are used :
-- \m00\m : \mint\m
+- \m00\m : \mi\m (internal)
 -
-- \m01\m : \mext\m
+- \m01\m : \mx\m (external)
 -
-- \m10\m : \mshd\m
+- \m10\m : \ms\m (shared)
 -
 - \m11\m : undefined (will cause an "Undefined instruction ID" error)
 -
@@ -133,24 +145,22 @@ p In chibincc, the SCOPE information is stored as part of the instruction ID : \
 
 t2 Second rank: EXE STATEMENT
 
-p Following an EXE, another trigram is expected : the STATEMENT.
-- \mif_\m : Conditional statement
+p Following an EXE, another character is expected : the STATEMENT.
+- \mi\m : Conditional statement
 -
-- \mfor\m : For loop
+- \mf\m : For loop
 -
-- \mwhi\m : While loop
+- \mw\m : While loop
 -
-- \mswi\m : Switch statement
+- \ms\m : Switch statement
 -
-- \mbrk\m : Break jump
+- \mb\m : Break jump
 -
-- \mctn\m : Continue jump
+- \mc\m : Continue jump
 -
-- \mret\m : Return jump
+- \mr\m : Return jump
 -
-- \mvfc\m : Void Function Call
--
-- \m\m : 
+- \mv\m : Void Function Call
 -
 - \m\m : 
 -
@@ -164,26 +174,28 @@ p Following an EXE, another trigram is expected : the STATEMENT.
 -
 - \m\m : 
 -
-- \masg\m : Assignation
+- \m\m : 
+-
+- \ma\m : Assignation
 -
 
 p In chibincc, the STATEMENT information is stored as part of the instruction ID : \
 2nd, 3rd, 4th & 5th bits are used :
-- \m0000\m : \mif_\m
+- \m0000\m : \mi\m
 -
-- \m0001\m : \mfor\m
+- \m0001\m : \mf\m
 -
-- \m0010\m : \mwhi\m
+- \m0010\m : \mw\m
 -
-- \m0011\m : \mswi\m
+- \m0011\m : \ms\m
 -
-- \m0100\m : \mbrk\m
+- \m0100\m : \mb\m
 -
-- \m0101\m : \mctn\m
+- \m0101\m : \mc\m
 -
-- \m0110\m : \mret\m
+- \m0110\m : \mr\m
 -
-- \m0111\m : \mvfc\m
+- \m0111\m : \mv\m
 -
 - \m1000\m : \m\m
 -
@@ -199,32 +211,32 @@ p In chibincc, the STATEMENT information is stored as part of the instruction ID
 -
 - \m1110\m : \m\m
 -
-- \m1111\m : \masg\m
+- \m1111\m : \ma\m
 -
 
 
 
 t2 Third rank : DEF SCOPE KIND
 
-p Following a DEF SCOPE, another trigram is expected : its KIND.
-- \mcpy\m : Copy type
+p Following a DEF SCOPE, another character is expected : its KIND.
+- \mc\m : Type Copy
 -
-- \mstc\m : Structure type
+- \ms\m : Structure type
 -
-- \mfct\m : Function
+- \mf\m : Function
 -
-- \mdat\m : Data item
+- \md\m : Data item
 -
 
 p In chibincc, the KIND information is stored as part of the instruction ID : \
 4th & 5th bits are used :
-- \m00\m : \mcpy\m
+- \m00\m : \mc\m (type copy)
 -
-- \m01\m : \mstc\m
+- \m01\m : \ms\m (structure type)
 -
-- \m10\m : \mfct\m
+- \m10\m : \mf\m (function)
 -
-- \m11\m : \mdat\m
+- \m11\m : \md\m (data item)
 -
 
 
@@ -235,19 +247,18 @@ t2 Third rank : EXE STATEMENT details
 t3 IF_ statement
 
 "
-EXE if_ <condition> <block> [next]
+EXE i <condition> <block> [next]
 "
-l If field "next" exists, it must be \melf\m or \mels\m :
-- \mEXE if_<condition><block>els<els_block>\m
+l If field "next" exists, it must be \mi\m ("else if") or \me\m (just "else") :
+- \mEXE if_<condition><block>e<else_block>\m
 No additionnal "next" field allowed.
 -
-- \mEXE if_ <condition> <block> elf <condition> <elf_block> [next]\m
+- \mEXE i <condition> <block> i <condition> <else-if_block> [next]\m
 Field "next" works the same as before (several chains allowed).
 -
-p Condition can be either a VALUE or a function call which means we . \
-and blocks can hold a certain number of instructions themselves so we must use delimiters to know where to end reading them. \
-Moreover, beginning from the condition to the very end, we have a succession of blocks once over 2. \
-ach block is delimited by a starting \m{\m and its stopping delimiter \m}\m.
+p Conditions are values. \
+Blocks are aggregations of a certain number of instructions so we must use openning and closing braces delimiters \m{\m and \m}\m to know when they begin and when they end. \
+Moreover, beginning from the condition to the very end, we have a succession of blocks once over 2.
 
 t3 . statement
 

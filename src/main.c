@@ -4,7 +4,7 @@
 #include "std.c"
 
 //compilation
-#include "compiler.c"
+#include "assembler.c"
 
 
 
@@ -190,28 +190,25 @@ byt zmain(tab* args) {
 		//preprocessor
 		if(mode == MODE__PRE) {
 			if(outputPath == NULL) { outputPath = str__add(Path__name(inputPath), s(".nc.p")); }
-			IO__writeFile(
-				outputPath,
-				preprocess(inputPath, includeDirs)
-			);
+			//str* result = preprocess(inputPath, includeDirs);
+			//IO__writeFile(outputPath, result);
+			//str__free(result);
 		}
 
 		//assembly
 		else if(mode == MODE__ASM) {
 			if(outputPath == NULL) { outputPath = str__add(Path__name(inputPath), s(".asm")); }
-			IO__writeFile(
-				outputPath,
-				assemble(inputPath, includeDirs)
-			);
+			str* result = assemble(inputPath, includeDirs);
+			IO__writeFile(outputPath, result);
+			str__free(result);
 		}
 
 		//object (default)
 		else {
 			if(outputPath == NULL) { outputPath = str__add(Path__name(inputPath), s(".o")); }
-			IO__writeFile(
-				outputPath,
-				compile(inputPath, includeDirs) //, SDLDeps, usePIC)
-			);
+			str* result = compile(inputPath, includeDirs); //, SDLDeps, usePIC)
+			IO__writeFile(outputPath, result);
+			str__free(result);
 		}
 
 		//debug

@@ -11,8 +11,37 @@
 // ---------------- COMPILING ----------------
 
 //
-str* buildAssembly(tab_tok* pproc_tokens) {
-	return ;
+str* buildAssembly(lst* pproc_tokens) {
+	str* resultText = Str__new(0ULL);
+	str* ID_TEXT       = s("\tid:    ");
+	str* VALUE_TEXT    = s("\tvalue: ");
+	str* CONTEXT_TEXT  = s("\tctx:   ");
+	str* LOCATION_TEXT = s("\tloc:   ");
+	for(ulng t=0ULL; t < lst__length(pproc_tokens); t++) {
+		token* tok = (token*)lst__index(pproc_tokens, t);
+
+		//ID
+		str* idStr = ulng__toStr(tok->id);
+		str__addSelf(resultText, idStr);
+		str__free(idStr);
+		str__addChrSelf(resultText, '\n');
+
+		//body
+		str__addSelf(resultText, (str*)(tok->body));
+		str__addChrSelf(resultText, '\n');
+
+		//location
+		str* location = Parsing__ctx__toStr(tok->ctx);
+		str__addSelf(resultText, location);
+		str__free(location);
+		str__addChrSelf(resultText, '\n');
+		str__addChrSelf(resultText, '\n');
+	}
+	str__free(ID_TEXT      );
+	str__free(VALUE_TEXT   );
+	str__free(CONTEXT_TEXT );
+	str__free(LOCATION_TEXT);
+	return resultText;
 }
 
 
@@ -44,8 +73,8 @@ str* compile(str* inputPath, tab* includeDirs) { //, tab* SDLDeps, boo usePIC) {
 	lst* pproc_tokens = preprocess(inputPath, includeDirs);
 
 	//compile
-	str* text = buildAssembly(pproc_tokens);
-	for(ulng t=0ULL; t < lst__length(pproc_tokens); t++) { token__free(lst__index(pproc_tokens, t)); }
+	str* result = buildAssembly(pproc_tokens);
+	for(ulng t=0ULL; t < lst__length(pproc_tokens); t++) { token__free((token*)lst__index(pproc_tokens, t)); }
 	lst__free(pproc_tokens, false);
 
 	//return result
