@@ -472,11 +472,23 @@ void IO__writeFile(str* path, str* text) {
 	IO__file__write(f, text);
 	IO__file__close(f);
 }
-/*void IO__file__flush(IO__file* f) {
-	fflush(f->c_ptr);
+//void IO__file__flush(IO__file* f) {
+//	fflush(f->c_ptr);
+//}
+
+//ctx print shortcuts <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< TEMPORARY
+void IO__ctxt__print(chr* c) {
+	str* s = ctxt__toStr(c);
+	IO__print(s);
+	free(s);
+}
+void IO__ctxt__printLF(chr* c) {
+	str* s = ctxt__toStr(c);
+	IO__printLF(s);
+	free(s);
 }
 
-//dynamic memory buffer
+/*//dynamic memory buffer
 typedef struct {
 	IO__file* metadata;
 	ubyt*     addr;
@@ -504,9 +516,9 @@ void dmb__flush(dmb* d) {
 //definitions
 const ubyt Err__SUCCESS = '\x00';
 const ubyt Err__FAILURE = '\x01';
-str Err__DEBUG_HEADER = { 8, "[DEBUG] " };
-str Err__WARNN_HEADER = { 8, "[WARNN] " };
-str Err__ERROR_HEADER = { 8, "[ERROR] " };
+str Err__DEBUG_HEADER = { 10, "[ DEBUG ] " };
+str Err__WARNN_HEADER = { 10, "[WARNING] " };
+str Err__ERROR_HEADER = { 10, "[ ERROR ] " };
 #define Err__DEBUG
 
 //functions
@@ -521,7 +533,7 @@ void Err__warning(str* msg) {
 	IO__printLF(msg);
 }
 void Err__error(str* msg, ubyt err) {
-	IO__print(&Err__WARNN_HEADER);
+	IO__print(&Err__ERROR_HEADER);
 	IO__printLF(msg);
 	Syscall__exit(err);
 }
@@ -1134,13 +1146,13 @@ str* Parsing__ctx__toStr(Parsing__ctx* ctx) {
 
 	//lineNbr
 	str* lineNbrStr = ulng__toStr(ctx->lineNbr);
-	str__addSelf(resultStr, lineNbrStr);
+	resultStr = str__addSelf(resultStr, lineNbrStr);
 	str__free(lineNbrStr);
-	str__addChrSelf(resultStr, ':');
+	resultStr = str__addChrSelf(resultStr, ':');
 
 	//columnNbr
 	str* columnNbrStr = ulng__toStr(ctx->columnNbr);
-	str__addSelf(resultStr, columnNbrStr);
+	resultStr = str__addSelf(resultStr, columnNbrStr);
 	str__free(columnNbrStr);
 	return resultStr;
 }

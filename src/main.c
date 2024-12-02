@@ -37,14 +37,14 @@ byt MODE__OBJ = '\x02';
 
 //help menu
 void printUsage(tab* opts) {
-	IO__printLF(s("Usage: chibincc [options] <files>..."));
-	IO__printLF(s("\nCompile NC source code into object format.\n"));
+	IO__ctxt__printLF("Usage: chibincc [options] <files>...");
+	IO__ctxt__printLF("\nCompile NC source code into object format.\n");
 	Opt__printUsage(opts);
 	Syscall__exit(Err__SUCCESS);
 }
 
 tab* collectDependencies_SDL(opt* o){
-	tab* deps = NULL;
+	tab* deps;
 	if(opt__enabled(o)){
 		deps = str__splitByChr(o->value, ':');
 
@@ -54,12 +54,12 @@ tab* collectDependencies_SDL(opt* o){
 			//<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< TODO (check absolute paths + in standard paths (/lib) + in LD_LIBRARY_PATH)
 			//Path__errorIfNotFIle(p, Err__FAILURE);
 		}
-	}
+	}else{ deps = Tab__new(0ULL, NULL); }
 	return deps;
 }
 
 tab* collectDependencies_includes(opt* o){
-	tab* deps = NULL;
+	tab* deps;
 	if(opt__enabled(o)){
 		deps = str__splitByChr(o->value, ':');
 
@@ -67,7 +67,7 @@ tab* collectDependencies_includes(opt* o){
 		for(ulng d=0UL; d < deps->length; d++) {
 			Path__errorIfNotDir(tab_str__index(deps, d), Err__FAILURE);
 		}
-	}
+	}else{ deps = Tab__new(0ULL, NULL); }
 	return deps;
 }
 
@@ -183,9 +183,9 @@ byt zmain(tab* args) {
 		Path__errorIfNotFile(inputPath, Err__FAILURE);
 
 		//debug
-		IO__print(s("Compiling file '"));
+		IO__ctxt__print("Compiling file '");
 		IO__print(inputPath);
-		IO__printLF(s("' {"));
+		IO__ctxt__printLF("' {");
 
 		//preprocessor
 		if(mode == MODE__PRE) {
@@ -212,7 +212,8 @@ byt zmain(tab* args) {
 		}
 
 		//debug
-		IO__printLF(s("}"));
+		IO__printChr('}');
+		IO__printChr('\n');
 	}
 
 	//terminated successfully

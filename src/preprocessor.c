@@ -13,14 +13,14 @@
 lst* preprocess(str* inputPath, tab* includeDirs) {
 
 	//debug
-	IO__printLF(s("  Preprocessing {"));
-	IO__print(s("    inputPath["));
+	IO__ctxt__printLF("  Preprocessing {");
+	IO__ctxt__print("    inputPath[");
 	IO__print(inputPath);
-	IO__printLF(s("    ]"));
-	IO__print(s("    inc["));
-	for(ulng i=0UL; i < includeDirs->length; i++) { IO__print(tab_str__index(includeDirs, i)); IO__print(s(", ")); }
-	IO__printLF(s("]"));
-	IO__printLF(s("  }"));
+	IO__ctxt__printLF("    ]");
+	IO__ctxt__print("    inc[");
+	for(ulng i=0ULL; i < includeDirs->length; i++) { IO__print(tab_str__index(includeDirs, i)); IO__printChr(','); }
+	IO__ctxt__printLF("]");
+	IO__ctxt__printLF("  }");
 
 	//read input file
 	str* inputText = IO__readFile(inputPath);
@@ -29,7 +29,9 @@ lst* preprocess(str* inputPath, tab* includeDirs) {
 	//vocab* v = initVocab();
 
 	//tokenize text
+	IO__ctxt__printLF("ALPHA");
 	lst* result = Tokenization__run(inputPath, inputText); //, v);
+	IO__ctxt__printLF("BETA");
 	free(inputText);
 
 	//return token table

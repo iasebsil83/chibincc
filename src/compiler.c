@@ -22,20 +22,20 @@ str* buildAssembly(lst* pproc_tokens) {
 
 		//ID
 		str* idStr = ulng__toStr(tok->id);
-		str__addSelf(resultText, idStr);
+		resultText = str__addSelf(resultText, idStr);
 		str__free(idStr);
-		str__addChrSelf(resultText, '\n');
+		resultText = str__addChrSelf(resultText, '\n');
 
 		//body
-		str__addSelf(resultText, (str*)(tok->body));
-		str__addChrSelf(resultText, '\n');
+		resultText = str__addSelf(resultText, (str*)(tok->body));
+		resultText = str__addChrSelf(resultText, '\n');
 
 		//location
 		str* location = Parsing__ctx__toStr(tok->ctx);
-		str__addSelf(resultText, location);
+		resultText = str__addSelf(resultText, location);
 		str__free(location);
-		str__addChrSelf(resultText, '\n');
-		str__addChrSelf(resultText, '\n');
+		resultText = str__addChrSelf(resultText, '\n');
+		resultText = str__addChrSelf(resultText, '\n');
 	}
 	str__free(ID_TEXT      );
 	str__free(VALUE_TEXT   );
@@ -55,19 +55,19 @@ str* buildAssembly(lst* pproc_tokens) {
 str* compile(str* inputPath, tab* includeDirs) { //, tab* SDLDeps, boo usePIC) {
 
 	//debug
-	IO__printLF(s("  Compiling {"));
-	IO__print(s("    inputPath["));
+	IO__ctxt__printLF("  Compiling {");
+	IO__ctxt__print("    inputPath[");
 	IO__print(inputPath);
-	IO__printLF(s("    ]"));
-	IO__print(s("    inc["));
-	for(ulng i=0UL; i < includeDirs->length; i++) { IO__print(tab_str__index(includeDirs, i)); IO__print(s(", ")); }
-	IO__printLF(s("]"));
-	//IO__print(s("    SDLDeps["));
-	//for(ulng i=0UL; i < SDLDeps->length; i++) { IO__print(tab_str__index(SDLDeps, i)); IO__print(s(", ")); }
-	//IO__printLF(s("]"));
-	//if(usePIC) { IO__printLF(s("    usePIC[true]")); }
-	//else       { IO__printLF(s("    usePIC[false]")); }
-	IO__printLF(s("  }"));
+	IO__ctxt__printLF("    ]");
+	IO__ctxt__print("    inc[");
+	for(ulng i=0UL; i < includeDirs->length; i++) { IO__print(tab_str__index(includeDirs, i)); IO__ctxt__print(", "); }
+	IO__ctxt__printLF("]");
+	//IO__print("    SDLDeps["));
+	//for(ulng i=0UL; i < SDLDeps->length; i++) { IO__print(tab_str__index(SDLDeps, i)); IO__print(", ")); }
+	//IO__printLF("]"));
+	//if(usePIC) { IO__printLF("    usePIC[true]")); }
+	//else       { IO__printLF("    usePIC[false]")); }
+	IO__ctxt__printLF("  }");
 
 	//preprocess first
 	lst* pproc_tokens = preprocess(inputPath, includeDirs);

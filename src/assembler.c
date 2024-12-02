@@ -26,14 +26,14 @@ str* buildObj(str* inputASM) {
 str* assemble(str* inputPath, tab* includeDirs) {
 
 	//debug
-	IO__printLF(s("  Assembling {"));
-	IO__print(s("    inputPath["));
+	IO__ctxt__printLF("  Assembling {");
+	IO__ctxt__print("    inputPath[");
 	IO__print(inputPath);
-	IO__printLF(s("    ]"));
-	IO__print(s("    inc["));
-	for(ulng i=0UL; i < includeDirs->length; i++) { IO__print(tab_str__index(includeDirs, i)); IO__print(s(", ")); }
-	IO__printLF(s("]"));
-	IO__printLF(s("  }"));
+	IO__ctxt__printLF("    ]");
+	IO__ctxt__print("    inc[");
+	for(ulng i=0UL; i < includeDirs->length; i++) { IO__print(tab_str__index(includeDirs, i)); IO__ctxt__print(", "); }
+	IO__ctxt__printLF("]");
+	IO__ctxt__printLF("  }");
 
 	//compile first
 	str* asm = compile(inputPath, includeDirs);

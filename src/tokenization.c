@@ -470,20 +470,30 @@ static uint32_t read_universal_char(char *p, int len) {
 
 //read body including nested instructions themselves
 ulng readWholeInstructionBody(Parsing__ctx* ctx) {
+	/*IO__ctxt__printLF("BODY STEP1 [");
+	str* TECHT = Parsing__ctx__toStr(ctx);
+	IO__printLF(TECHT);
+	str__free(TECHT);
+	IO__ctxt__printLF("BODY STEP1 ]");*/
+
 	istr* icontent   = ctx->icontent;
 	ulng  startIndex = icontent->index;
 
 	//end of line => end of instruction
+	//IO__ctxt__printLF("BODY STEP2");
 	while(true) {
 		if(Parsing__ctx__inc(ctx)) { break; }
 		chr c = Parsing__ctx__get(ctx);
 		if(c == '\n'){ break; }
 	}
+	//IO__ctxt__printLF("BODY STEP3");
 
 	//update value now that we have it
 	ulng bodyLength = icontent->index - startIndex;
 	str* body       = Str__new(bodyLength);
+	//IO__ctxt__printLF("BODY STEP4");
 	for(ulng i=0ULL; i < bodyLength; i++) { str__indexAssign(body, i, str__index(icontent->s, startIndex + i)); }
+	//IO__ctxt__printLF("BODY STEP5");
 
 	//return token
 	return (ulng)body;
@@ -574,6 +584,20 @@ token* newExecutionToken_Assign(Parsing__ctx* ctx) {
 //error function
 void Tokenization__error(Parsing__ctx* ctx, str* s) {
 	IO__printLF(Parsing__ctx__toStr(ctx));
+	str* content = ctx->icontent->s;
+
+	//print full line
+	ulng startIndex = ctx->icontent->index;
+	ulng length     = 0ULL;
+	while(startIndex + length < content->length){
+		if(str__index(content, startIndex + length) == '\n') { break; }
+		length++;
+	}
+	content->data   = content->data + startIndex; //edit directly into content string because, at this state,
+	content->length = length;                     //we don't care, end of program is imminent
+	IO__printLF(content);
+
+	//error
 	Err__error(s, Err__FAILURE);
 }
 
@@ -584,19 +608,26 @@ lst* Tokenization__run(str* filename, str* inputText) {
 	lst*          tokens = Lst__new();
 	Parsing__ctx* ctx    = Parsing__Ctx__new(filename, inputText);
 
-	str* ERR1 = s("Missing DEF SCOPE.");
-	str* ERR2 = s("Missing DEF SCOPE KIND.");
-	str* ERR3 = s("Invalid DEF SCOPE KIND given.");
-	str* ERR4 = s("Invalid DEF SCOPE given.");
-	str* ERR5 = s("Missing EXE STATEMENT.");
-	str* ERR6 = s("Invalid EXE STATEMENT given.");
-	str* ERR7 = s("Invalid ROLE given.");
-
 	//as long as we got things to read
+	ulng debugStartIndex = 0ULL;
 	while(true) {
 		if(Parsing__ctx__inc(ctx)) { break; }
 		chr c = Parsing__ctx__get(ctx);
 
+		//dbug
+		istr* currentIStr = ctx->icontent;
+		IO__printChr('[');
+		for(ulng aaa=debugStartIndex; aaa <= currentIStr->index; aaa++) {
+			IO__printChr(str__index(currentIStr->s, aaa));
+		}
+		//str* TESTUX = Parsing__ctx__toStr(ctx);
+		//IO__printLF(TESTUX);
+		//str__free(TESTUX);
+		debugStartIndex = currentIStr->index;
+		IO__printChr(']');
+		IO__printChr('\n');
+
+		//skip beginning indent
 		if(c == '\t') { continue; }
 
 		//1st rank : ROLE
@@ -605,49 +636,47 @@ lst* Tokenization__run(str* filename, str* inputText) {
 
 
 
-			//ignore tabulations
-			case '\t': break;
-
-
-
 			//DEF
 			case 'd':
+				IO__ctxt__printLF("DEF {");
 
 				//2nd rank : DEF SCOPE
-				if(Parsing__ctx__inc(ctx)) { Tokenization__error(ctx, ERR1); }
+				if(Parsing__ctx__inc(ctx)) { Tokenization__error(ctx, s("Missing DEF SCOPE.")); }
 				c = Parsing__ctx__get(ctx);
 				scope = '\xff'; //invalid value for DEF SCOPE
 				switch(c) {
 					case 'i':
-						if(scope == '\xff') { scope = NC__DEF_SCOPE_INTERN; }
+						if(scope == '\xff') { scope = NC__DEF_SCOPE_INTERN; IO__ctxt__printLF("SCOPE i"); }
 					case 'x':
-						if(scope == '\xff') { scope = NC__DEF_SCOPE_EXTERN; }
+						if(scope == '\xff') { scope = NC__DEF_SCOPE_EXTERN; IO__ctxt__printLF("SCOPE e"); }
 					case 's':
-						if(scope == '\xff') { scope = NC__DEF_SCOPE_SHARED; }
+						if(scope == '\xff') { scope = NC__DEF_SCOPE_SHARED; IO__ctxt__printLF("SCOPE s"); }
 					case 'l':
-						if(scope == '\xff') { scope = NC__DEF_SCOPE_LOCAL; }
+						if(scope == '\xff') { scope = NC__DEF_SCOPE_LOCAL; IO__ctxt__printLF("SCOPE l"); }
 
 						//3rd rank : DEF SCOPE KIND
-						if(Parsing__ctx__inc(ctx)) { Tokenization__error(ctx, ERR2); }
+						if(Parsing__ctx__inc(ctx)) { Tokenization__error(ctx, s("Missing DEF SCOPE KIND.")); }
 						switch(Parsing__ctx__get(ctx)){
 							case 'c': lst__append(tokens, (byt*)newDefinitionToken_TypeCopy( ctx, scope)); break;
 							case 's': lst__append(tokens, (byt*)newDefinitionToken_Structure(ctx, scope)); break;
 							case 'f': lst__append(tokens, (byt*)newDefinitionToken_Function( ctx, scope)); break;
 							case 'd': lst__append(tokens, (byt*)newDefinitionToken_DataItem( ctx, scope)); break;
-							default: Tokenization__error(ctx, ERR3);
+							default: Tokenization__error(ctx, s("Missing DEF SCOPE KIND."));
 						}
 					break;
-					default: Tokenization__error(ctx, ERR4);
+					default: Tokenization__error(ctx, s("Invalid DEF SCOPE given."));
 				}
+				IO__ctxt__printLF("DEF }");
 			break;
 
 
 
 			//EXE
 			case 'x':
+				IO__ctxt__printLF("EXE {");
 
 				//2nd rank : EXE STATEMENT
-				if(Parsing__ctx__inc(ctx)) { Tokenization__error(ctx, ERR5); }
+				if(Parsing__ctx__inc(ctx)) { Tokenization__error(ctx, s("Invalid DEF SCOPE given.")); }
 				switch(Parsing__ctx__get(ctx)) {
 					case 'i': lst__append(tokens, (byt*)newExecutionToken_If(      ctx)); break;
 					case 'f': lst__append(tokens, (byt*)newExecutionToken_For(     ctx)); break;
@@ -665,24 +694,19 @@ lst* Tokenization__run(str* filename, str* inputText) {
 					//case '': lst__append(tokens, (byt*)newExecutionToken_(ctx)); break;
 					//case '': lst__append(tokens, (byt*)newExecutionToken_(ctx)); break;
 					case 'a': lst__append(tokens, (byt*)newExecutionToken_Assign(  ctx)); break;
-					default: Tokenization__error(ctx, ERR6);
+					default: Tokenization__error(ctx, s("Invalid EXE STATEMENT given."));
 				}
+				IO__ctxt__printLF("EXE }");
 			break;
 
 
 
 			//undefined
-			default: Tokenization__error(ctx, ERR7);
+			default: Tokenization__error(ctx, s("Invalid ROLE given."));
 		}
 	}
 
-	str__free(ERR1);
-	str__free(ERR2);
-	str__free(ERR3);
-	str__free(ERR4);
-	str__free(ERR5);
-	str__free(ERR6);
-	str__free(ERR7);
+	IO__ctxt__printLF("END REACHED");
 
 	//final result
 	return tokens;
