@@ -645,7 +645,7 @@ void Arg__parse(tab* args, tab* opts) {
 			if(!foundMatching) {
 				Err__error(
 					str__add(str__add( s("Undefined option '"), a), s("'.\n")),
-					1
+					Err__FAILURE
 				);
 			}
 		}
@@ -783,6 +783,93 @@ void Path__errorIfNotFile(str* path, byt err) {
 
 
 // ---------------- CONVERSIONS ----------------
+
+//str -> unsigned
+ubyt chr__fromHexToUByt(chr c) {
+	if(c >= '0' && c <= '9'){ return c - '0'; }
+	if(c >= 'a' && c <= 'f'){ return c - 'a'; }
+	return '\xff';
+}
+ubyt str__toUByt(str* input) {
+	if(s->length < 2ULL) {
+		Err__error(
+			str__add(str__add(s("String \""), input), s("\" too short to be converted into UByt (at least 2 characters required).")),
+			Err__FAILURE
+		);
+	}
+	ubyt pow1 = chr__fromHexToUByt(str__index(input, 0ULL));
+	ubyt pow0 = chr__fromHexToUByt(str__index(input, 1ULL));
+	return pow1 << 4 | pow0;
+}
+ushr str__toUShr(str* input) {
+	if(s->length < 4ULL) {
+		Err__error(
+			str__add(str__add(s("String \""), input), s("\" too short to be converted into UShr (at least 4 characters required).")),
+			Err__FAILURE
+		);
+	}
+	ushr pow3 = chr__fromHexToUByt(str__index(input, 0ULL));
+	ushr pow2 = chr__fromHexToUByt(str__index(input, 1ULL));
+	ushr pow1 = chr__fromHexToUByt(str__index(input, 2ULL));
+	ushr pow0 = chr__fromHexToUByt(str__index(input, 3ULL));
+	return \
+		pow3 << 12 | pow2 << 8 | \
+		pow1 <<  4 | pow0;
+}
+uint str__toUInt(str* input) {
+	if(s->length < 8ULL) {
+		Err__error(
+			str__add(str__add(s("String \""), input), s("\" too short to be converted into UInt (at least 8 characters required).")),
+			Err__FAILURE
+		);
+	}
+	uint pow7 = chr__fromHexToUByt(str__index(input, 0ULL));
+	uint pow6 = chr__fromHexToUByt(str__index(input, 1ULL));
+	uint pow5 = chr__fromHexToUByt(str__index(input, 2ULL));
+	uint pow4 = chr__fromHexToUByt(str__index(input, 3ULL));
+	uint pow3 = chr__fromHexToUByt(str__index(input, 4ULL));
+	uint pow2 = chr__fromHexToUByt(str__index(input, 5ULL));
+	uint pow1 = chr__fromHexToUByt(str__index(input, 6ULL));
+	uint pow0 = chr__fromHexToUByt(str__index(input, 7ULL));
+	return \
+		pow7 << 28 | pow6 << 24 | \
+		pow5 << 20 | pow4 << 16 | \
+		pow3 << 12 | pow2 <<  8 | \
+		pow1 <<  4 | pow0;
+}
+ulng str__toULng(str* input) {
+	if(s->length < 16ULL) {
+		Err__error(
+			str__add(str__add(s("String \""), input), s("\" too short to be converted into ULng (at least 16 characters are required).")),
+			Err__FAILURE
+		);
+	}
+	ulng powF = chr__fromHexToUByt(str__index(input,  0ULL));
+	ulng powE = chr__fromHexToUByt(str__index(input,  1ULL));
+	ulng powD = chr__fromHexToUByt(str__index(input,  2ULL));
+	ulng powC = chr__fromHexToUByt(str__index(input,  3ULL));
+	ulng powB = chr__fromHexToUByt(str__index(input,  4ULL));
+	ulng powA = chr__fromHexToUByt(str__index(input,  5ULL));
+	ulng pow9 = chr__fromHexToUByt(str__index(input,  6ULL));
+	ulng pow8 = chr__fromHexToUByt(str__index(input,  7ULL));
+	ulng pow7 = chr__fromHexToUByt(str__index(input,  8ULL));
+	ulng pow6 = chr__fromHexToUByt(str__index(input,  9ULL));
+	ulng pow5 = chr__fromHexToUByt(str__index(input, 10ULL));
+	ulng pow4 = chr__fromHexToUByt(str__index(input, 11ULL));
+	ulng pow3 = chr__fromHexToUByt(str__index(input, 12ULL));
+	ulng pow2 = chr__fromHexToUByt(str__index(input, 13ULL));
+	ulng pow1 = chr__fromHexToUByt(str__index(input, 14ULL));
+	ulng pow0 = chr__fromHexToUByt(str__index(input, 15ULL));
+	return \
+		powF << 60 | powE << 56 | \
+		powD << 52 | powC << 48 | \
+		powB << 44 | powA << 40 | \
+		pow9 << 36 | pow8 << 32 | \
+		pow7 << 28 | pow6 << 24 | \
+		pow5 << 20 | pow4 << 16 | \
+		pow3 << 12 | pow2 <<  8 | \
+		pow1 <<  4 | pow0;
+}
 
 //unsigned -> str
 chr ubyt__lastHexDigit(ubyt u) {
