@@ -97,7 +97,7 @@ token* Tokenization__newExecutionToken_Assign(Parsing__ctx* ctx) {
 // ---------------- MAIN ENTRY POINT ----------------
 
 //text to token list
-lst* Tokenization__tokenize(Parsing__ctx* ctx, str* inputText) {
+lst* Tokenization__tokenize(Parsing__ctx* ctx) {
 	lst* tokens = Lst__new();
 
 	//as long as we got things to read
@@ -119,8 +119,8 @@ lst* Tokenization__tokenize(Parsing__ctx* ctx, str* inputText) {
 		IO__printChr(']');
 		IO__printChr('\n');
 
-		//skip beginning indent
-		if(c == '\t') { continue; }
+		//skip beginning indent or line feed
+		if(c == '\t' || c == '\n') { continue; }
 
 		//1st rank : ROLE
 		ubyt scope;
@@ -133,7 +133,7 @@ lst* Tokenization__tokenize(Parsing__ctx* ctx, str* inputText) {
 				IO__ctxt__printLF("DEF {");
 
 				//2nd rank : DEF SCOPE
-				if(Parsing__ctx__inc(ctx)) { Tokenization__error(ctx, s("Missing DEF SCOPE.")); }
+				if(Parsing__ctx__inc(ctx)) { Tokenization__error(ctx, ctxt__toStr("Missing DEF SCOPE.")); }
 				c = Parsing__ctx__get(ctx);
 				scope = '\xff'; //invalid value for DEF SCOPE
 				switch(c) {
@@ -147,16 +147,16 @@ lst* Tokenization__tokenize(Parsing__ctx* ctx, str* inputText) {
 						if(scope == '\xff') { scope = NC__DEF_SCOPE_LOCAL; IO__ctxt__printLF("SCOPE l"); }
 
 						//3rd rank : DEF SCOPE KIND
-						if(Parsing__ctx__inc(ctx)) { Tokenization__error(ctx, s("Missing DEF SCOPE KIND.")); }
+						if(Parsing__ctx__inc(ctx)) { Tokenization__error(ctx, ctxt__toStr("Missing DEF SCOPE KIND.")); }
 						switch(Parsing__ctx__get(ctx)){
 							case 'c': lst__append(tokens, (byt*)Tokenization__newDefinitionToken_TypeCopy( ctx, scope)); break;
 							case 's': lst__append(tokens, (byt*)Tokenization__newDefinitionToken_Structure(ctx, scope)); break;
 							case 'f': lst__append(tokens, (byt*)Tokenization__newDefinitionToken_Function( ctx, scope)); break;
 							case 'd': lst__append(tokens, (byt*)Tokenization__newDefinitionToken_DataItem( ctx, scope)); break;
-							default: Tokenization__error(ctx, s("Missing DEF SCOPE KIND."));
+							default: Tokenization__error(ctx, ctxt__toStr("Missing DEF SCOPE KIND."));
 						}
 					break;
-					default: Tokenization__error(ctx, s("Invalid DEF SCOPE given."));
+					default: Tokenization__error(ctx, ctxt__toStr("Invalid DEF SCOPE given."));
 				}
 				IO__ctxt__printLF("DEF }");
 			break;
@@ -168,25 +168,25 @@ lst* Tokenization__tokenize(Parsing__ctx* ctx, str* inputText) {
 				IO__ctxt__printLF("EXE {");
 
 				//2nd rank : EXE STATEMENT
-				if(Parsing__ctx__inc(ctx)) { Tokenization__error(ctx, s("Invalid DEF SCOPE given.")); }
+				if(Parsing__ctx__inc(ctx)) { Tokenization__error(ctx, ctxt__toStr("Invalid DEF SCOPE given.")); }
 				switch(Parsing__ctx__get(ctx)) {
-					case 'i': lst__append(tokens, (byt*)Tokenization__newExecutionTokenIf(      ctx)); break;
-					case 'f': lst__append(tokens, (byt*)Tokenization__newExecutionTokenFor(     ctx)); break;
-					case 'w': lst__append(tokens, (byt*)Tokenization__newExecutionTokenWhile(   ctx)); break;
-					case 's': lst__append(tokens, (byt*)Tokenization__newExecutionTokenSwitch(  ctx)); break;
-					case 'b': lst__append(tokens, (byt*)Tokenization__newExecutionTokenBreak(   ctx)); break;
-					case 'c': lst__append(tokens, (byt*)Tokenization__newExecutionTokenContinue(ctx)); break;
-					case 'r': lst__append(tokens, (byt*)Tokenization__newExecutionTokenReturn(  ctx)); break;
-					case 'v': lst__append(tokens, (byt*)Tokenization__newExecutionTokenVFC(     ctx)); break;
-					//case '': lst__append(tokens, (byt*)Tokenization__newExecutionToken(ctx)); break;
-					//case '': lst__append(tokens, (byt*)Tokenization__newExecutionToken(ctx)); break;
-					//case '': lst__append(tokens, (byt*)Tokenization__newExecutionToken(ctx)); break;
-					//case '': lst__append(tokens, (byt*)Tokenization__newExecutionToken(ctx)); break;
-					//case '': lst__append(tokens, (byt*)Tokenization__newExecutionToken(ctx)); break;
-					//case '': lst__append(tokens, (byt*)Tokenization__newExecutionToken(ctx)); break;
-					//case '': lst__append(tokens, (byt*)Tokenization__newExecutionToken(ctx)); break;
-					case 'a': lst__append(tokens, (byt*)Tokenization__newExecutionTokenAssign(  ctx)); break;
-					default: Tokenization__error(ctx, s("Invalid EXE STATEMENT given."));
+					case 'i': lst__append(tokens, (byt*)Tokenization__newExecutionToken_If(      ctx)); break;
+					case 'f': lst__append(tokens, (byt*)Tokenization__newExecutionToken_For(     ctx)); break;
+					case 'w': lst__append(tokens, (byt*)Tokenization__newExecutionToken_While(   ctx)); break;
+					case 's': lst__append(tokens, (byt*)Tokenization__newExecutionToken_Switch(  ctx)); break;
+					case 'b': lst__append(tokens, (byt*)Tokenization__newExecutionToken_Break(   ctx)); break;
+					case 'c': lst__append(tokens, (byt*)Tokenization__newExecutionToken_Continue(ctx)); break;
+					case 'r': lst__append(tokens, (byt*)Tokenization__newExecutionToken_Return(  ctx)); break;
+					case 'v': lst__append(tokens, (byt*)Tokenization__newExecutionToken_VFC(     ctx)); break;
+					//case '': lst__append(tokens, (byt*)Tokenization__newExecutionToken_(ctx)); break;
+					//case '': lst__append(tokens, (byt*)Tokenization__newExecutionToken_(ctx)); break;
+					//case '': lst__append(tokens, (byt*)Tokenization__newExecutionToken_(ctx)); break;
+					//case '': lst__append(tokens, (byt*)Tokenization__newExecutionToken_(ctx)); break;
+					//case '': lst__append(tokens, (byt*)Tokenization__newExecutionToken_(ctx)); break;
+					//case '': lst__append(tokens, (byt*)Tokenization__newExecutionToken_(ctx)); break;
+					//case '': lst__append(tokens, (byt*)Tokenization__newExecutionToken_(ctx)); break;
+					case 'a': lst__append(tokens, (byt*)Tokenization__newExecutionToken_Assign(  ctx)); break;
+					default: Tokenization__error(ctx, ctxt__toStr("Invalid EXE STATEMENT given."));
 				}
 				IO__ctxt__printLF("EXE }");
 			break;
@@ -194,7 +194,7 @@ lst* Tokenization__tokenize(Parsing__ctx* ctx, str* inputText) {
 
 
 			//undefined
-			default: Tokenization__error(ctx, s("Invalid ROLE given."));
+			default: Tokenization__error(ctx, ctxt__toStr("Invalid ROLE given."));
 		}
 	}
 
@@ -206,6 +206,6 @@ lst* Tokenization__tokenize(Parsing__ctx* ctx, str* inputText) {
 
 //parsing entry point
 lst* Tokenization__run(str* filename, str* inputText) {
-	Parsing__ctx* ctx    = Parsing__Ctx__new(filename, inputText);
-	return Tokenization__tokenize(ctx, inputText);
+	Parsing__ctx* ctx = Parsing__Ctx__new(filename, inputText);
+	return Tokenization__tokenize(ctx);
 }

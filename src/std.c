@@ -16,6 +16,7 @@
 //shortcut notations for types
 typedef          char       byt;
 typedef unsigned char      ubyt;
+typedef unsigned short     ushr;
 typedef unsigned int       uint;
 typedef          long long  lng;
 typedef unsigned long long ulng;
@@ -194,20 +195,24 @@ void str__free(str* s){
 	free(s->data);
 	free(s);
 }
-str* s(chr* data) { return ctxt__toStr(data); } //shortcut notation <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< TEMPORARY AS WELL
 chr str__index(str* s, ulng index) {
 	return s->data[index];
 }
 void str__indexAssign(str* s, ulng index, chr value) {
 	s->data[index] = value;
 }
+str* str__copy(str* s) {
+	str* s2 = Str__new(s->length);
+	for(ulng i=0ULL; i < s->length; i++) { str__indexAssign(s2, i, str__index(s, i)); }
+	return s2;
+}
 str* str__sub(str* s, ulng firstIndex, ulng lastIndex) {
 	if(lastIndex == (ulng)-1L) {
 		lastIndex = s->length - 1UL;
 	}
-	if(firstIndex >= lastIndex) { return NULL; } //empty or out of possible scope
+	if(firstIndex > lastIndex) { return NULL; } //empty or out of possible scope
 	ulng newLength = lastIndex - firstIndex + 1UL;
-	if(newLength == s->length) { return s; } //nothing to operate
+	if(newLength == s->length) { return str__copy(s); } //nothing to operate
 	str* newS = Str__new(newLength);
 	for(ulng i=firstIndex; i <= lastIndex; i++) {
 		newS->data[i-firstIndex] = str__index(s,i);
@@ -349,19 +354,22 @@ typedef struct {
 	str* s;
 	ulng index;
 } istr;
-/*istr* IStr__new(ulng length) { //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< NOT USED YET
+istr* IStr__new(ulng length) {
 	istr* i  = malloc(sizeof(istr));
 	i->s     = Str__new(length);
 	i->index = -1LL;
 	return i;
-}*/
+}
 istr* IStr__fromStr(str* s) {
 	istr* i  = malloc(sizeof(istr));
 	i->s     = s;
 	i->index = -1LL;
 	return i;
 }
-void istr__free(istr* i) { free(i); }
+void istr__free(istr* i, boo freeContent) {
+	if(freeContent) { str__free(i->s); }
+	free(i);
+}
 boo istr__forward(istr* i, ulng step) {
 	if((i->index + step) >= i->s->length) { return true; } //could not forward => ret true
 	i->index += step;
@@ -371,9 +379,14 @@ boo istr__inc(istr* i) { return istr__forward(i, 1ULL); }
 chr istr__get(istr* i) {
 	return i->s->data[i->index];
 }
-/*void istr__set(istr* i, chr value) { //<<<<<<<<<<<<<<<<<<<<< NOT USED YET
+void istr__set(istr* i, chr value) {
 	i->s->data[i->index] = value;
-}*/
+}
+boo istr__push(istr* i, chr value) {
+	if(istr__inc(i)) { return true; }
+	istr__set(i, value);
+	return false;
+}
 
 
 
@@ -581,10 +594,10 @@ void Arg__detectedOption(opt* o, tab* args, ulng* argIndex) {
 
 		//error cases
 		if(argIndex[0] >= args->length) {
-			Err__error( str__add(str__add(s("Option '--"), o->long_name), s("' requires a value (nothing given).")), Err__FAILURE);
+			Err__error( str__add(str__add(ctxt__toStr("Option '--"), o->long_name), ctxt__toStr("' requires a value (nothing given).")), Err__FAILURE);
 		}
 		if(str__index(tab_str__index(args, argIndex[0]),0) == '-') {
-			Err__error( str__add(str__add(s("Option '--"), o->long_name), s("' requires a value (another option given).")), Err__FAILURE);
+			Err__error( str__add(str__add(ctxt__toStr("Option '--"), o->long_name), ctxt__toStr("' requires a value (another option given).")), Err__FAILURE);
 		}
 
 		//store given value
@@ -607,7 +620,7 @@ void Arg__parse(tab* args, tab* opts) {
 		if(str__index(a,0) == '-'){
 
 			//special case: lonely '-'
-			if(a->length == 1UL) { Err__error(s("Missing argument name to lonely '-'."), 1); }
+			if(a->length == 1UL) { Err__error(ctxt__toStr("Missing argument name to lonely '-'."), 1); }
 			boo foundMatching = false;
 
 			//long options
@@ -644,7 +657,7 @@ void Arg__parse(tab* args, tab* opts) {
 			//no matching option found
 			if(!foundMatching) {
 				Err__error(
-					str__add(str__add( s("Undefined option '"), a), s("'.\n")),
+					str__add(str__add( ctxt__toStr("Undefined option '"), a), ctxt__toStr("'.\n")),
 					Err__FAILURE
 				);
 			}
@@ -688,7 +701,7 @@ void Opt__printUsage(tab* opts) {
 	for(ulng s=0UL; s < descriptionPadding->length; s++) { str__indexAssign(descriptionPadding, s, ' '); }
 
 	//prepare output
-	str* output = s("Options:\n");
+	str* output = ctxt__toStr("Options:\n");
 	for(ulng optIndex=0UL; optIndex < opts->length; optIndex++) {
 		opt* o = tab_opt__index(opts, optIndex);
 
@@ -697,8 +710,8 @@ void Opt__printUsage(tab* opts) {
 			output,
 			str__add(
 				str__add(
-					str__addChr(s("\n  -"), o->short_name),
-					s(", --")
+					str__addChr(ctxt__toStr("\n  -"), o->short_name),
+					ctxt__toStr(", --")
 				),
 				o->long_name
 			)
@@ -706,11 +719,11 @@ void Opt__printUsage(tab* opts) {
 
 		//required argument or nothing
 		if(o->textRequired) {
-			output = str__add(output, s(" <"));
+			output = str__add(output, ctxt__toStr(" <"));
 			output = str__addChr(output, o->short_name);
-			output = str__add(output, s("> "));
+			output = str__add(output, ctxt__toStr("> "));
 		} else {
-			output = str__add(output, s("     "));
+			output = str__add(output, ctxt__toStr("     "));
 		}
 
 		//header padding
@@ -721,7 +734,7 @@ void Opt__printUsage(tab* opts) {
 			output = str__add(output, headerPadding);
 			str__free(headerPadding);
 		}
-		output = str__add(output, s(": "));
+		output = str__add(output, ctxt__toStr(": "));
 
 		//description lines
 		ulng d = 0UL;
@@ -763,7 +776,7 @@ boo Path__isFile(str* path) { //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 void Path__errorIfNotDir(str* path, byt err) {
 	if(!Path__isDir(path)){
 		Err__error(
-			str__add(str__add(s("Path '"), path), s("' is not a directory.")),
+			str__add(str__add(ctxt__toStr("Path '"), path), ctxt__toStr("' is not a directory.")),
 			err
 		);
 	}
@@ -771,7 +784,7 @@ void Path__errorIfNotDir(str* path, byt err) {
 void Path__errorIfNotFile(str* path, byt err) {
 	if(!Path__isFile(path)){
 		Err__error(
-			str__add(str__add(s("Path '"), path), s("' is not a file.")),
+			str__add(str__add(ctxt__toStr("Path '"), path), ctxt__toStr("' is not a file.")),
 			err
 		);
 	}
@@ -791,9 +804,9 @@ ubyt chr__fromHexToUByt(chr c) {
 	return '\xff';
 }
 ubyt str__toUByt(str* input) {
-	if(s->length < 2ULL) {
+	if(input->length < 2ULL) {
 		Err__error(
-			str__add(str__add(s("String \""), input), s("\" too short to be converted into UByt (at least 2 characters required).")),
+			str__add(str__add(ctxt__toStr("String \""), input), ctxt__toStr("\" too short to be converted into UByt (at least 2 characters required).")),
 			Err__FAILURE
 		);
 	}
@@ -802,9 +815,9 @@ ubyt str__toUByt(str* input) {
 	return pow1 << 4 | pow0;
 }
 ushr str__toUShr(str* input) {
-	if(s->length < 4ULL) {
+	if(input->length < 4ULL) {
 		Err__error(
-			str__add(str__add(s("String \""), input), s("\" too short to be converted into UShr (at least 4 characters required).")),
+			str__add(str__add(ctxt__toStr("String \""), input), ctxt__toStr("\" too short to be converted into UShr (at least 4 characters required).")),
 			Err__FAILURE
 		);
 	}
@@ -817,9 +830,9 @@ ushr str__toUShr(str* input) {
 		pow1 <<  4 | pow0;
 }
 uint str__toUInt(str* input) {
-	if(s->length < 8ULL) {
+	if(input->length < 8ULL) {
 		Err__error(
-			str__add(str__add(s("String \""), input), s("\" too short to be converted into UInt (at least 8 characters required).")),
+			str__add(str__add(ctxt__toStr("String \""), input), ctxt__toStr("\" too short to be converted into UInt (at least 8 characters required).")),
 			Err__FAILURE
 		);
 	}
@@ -838,9 +851,9 @@ uint str__toUInt(str* input) {
 		pow1 <<  4 | pow0;
 }
 ulng str__toULng(str* input) {
-	if(s->length < 16ULL) {
+	if(input->length < 16ULL) {
 		Err__error(
-			str__add(str__add(s("String \""), input), s("\" too short to be converted into ULng (at least 16 characters are required).")),
+			str__add(str__add(ctxt__toStr("String \""), input), ctxt__toStr("\" too short to be converted into ULng (at least 16 characters are required).")),
 			Err__FAILURE
 		);
 	}
@@ -1204,13 +1217,15 @@ typedef struct {
 	ulng  lineNbr;
 	ulng  columnNbr;
 	istr* icontent;
+	boo   detectedLF;
 } Parsing__ctx;
 Parsing__ctx* Parsing__Ctx__new(str* filename, str* content) {
 	Parsing__ctx* ctx = malloc(sizeof(Parsing__ctx));
-	ctx->filename  = filename;
-	ctx->lineNbr   = 1ULL;
-	ctx->columnNbr = 1ULL;
+	ctx->filename   = filename;
+	ctx->lineNbr    = 1ULL;
+	ctx->columnNbr  = 1ULL;
 	ctx->icontent   = IStr__fromStr(content);
+	ctx->detectedLF = false;
 	return ctx;
 }
 chr Parsing__ctx__get(Parsing__ctx* ctx) { return istr__get(ctx->icontent); }
@@ -1218,14 +1233,18 @@ chr Parsing__ctx__get(Parsing__ctx* ctx) { return istr__get(ctx->icontent); }
 boo Parsing__ctx__inc(Parsing__ctx* ctx) {
 	if(istr__inc(ctx->icontent)) { return true; } //can't go further => can't go further
 
-	//forward localization elements
-	chr c = istr__get(ctx->icontent);
-	if(c == '\n') { ctx->lineNbr++; ctx->columnNbr = 0ULL; } //new line
-	else          {                 ctx->columnNbr++;      } //regular character
+	//last character was a line feed => update line indicators
+	if(ctx->detectedLF) { ctx->detectedLF = false; ctx->lineNbr++; ctx->columnNbr = 0ULL; }
+
+	//LF behavior
+	if(istr__get(ctx->icontent) == '\n') { ctx->detectedLF = true; }
+
+	//regular behavior
+	ctx->columnNbr++;
 	return false;
 }
 void Parsing__ctx__free(Parsing__ctx* ctx) {
-	istr__free(ctx->icontent);
+	istr__free(ctx->icontent, false);
 	free(ctx);
 }
 str* Parsing__ctx__toStr(Parsing__ctx* ctx) {

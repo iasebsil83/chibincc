@@ -12,7 +12,7 @@ int main(int argc, char** argv) {
 	} else {
 		args->data = malloc(argc * sizeof(str*));
 		for(ulng i=0UL; i < argc; i++) {
-			args->data[i] = (byt*)s(argv[i]);
+			args->data[i] = (byt*)ctxt__toStr(argv[i]);
 		}
 	}
 	return zmain(args); //end of process => no need to free "args" afterwards

@@ -1,5 +1,10 @@
 // ---------------- DEFINITIONS ----------------
 
+//cycling calls
+str* buildAssembly(lst* pproc_tokens, ulng depth);
+lst* Tokenization__tokenize(Parsing__ctx* ctx);
+lst* Value__readWholeInstructionBody(Parsing__ctx* ctx);
+
 //values
 const ubyt VALUE_ARG__NAME       = '\x00';
 const ubyt VALUE_ARG__LITERAL1   = '\x01';
@@ -7,10 +12,10 @@ const ubyt VALUE_ARG__LITERAL2   = '\x02';
 const ubyt VALUE_ARG__LITERAL4   = '\x03';
 const ubyt VALUE_ARG__LITERAL8   = '\x04';
 const ubyt VALUE_ARG__CALL       = '\x05';
-const ubyt VALUE_ARG__SUBCONTENT = '\x05';
+const ubyt VALUE_ARG__SUBCONTENT = '\x06';
 typedef struct {
 	ubyt id;
-	ubyt* content;
+	ulng content;
 } valueArg;
 
 
@@ -48,6 +53,9 @@ const ubyt NC__DEF_SCOPE_KIND_COPY      = '\x00';
 const ubyt NC__DEF_SCOPE_KIND_STRUCTURE = '\x08';
 const ubyt NC__DEF_SCOPE_KIND_FUNCTION  = '\x10';
 const ubyt NC__DEF_SCOPE_KIND_DATA      = '\x18';
+
+//NC syntax : LIMITS
+const ulng NC__NAME_LENGTH_MAX = 64ULL; //looks like this: abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghabcd
 
 //tokens
 typedef struct {
@@ -94,16 +102,27 @@ void Tokenization__error(Parsing__ctx* ctx, str* s) {
 	IO__printLF(Parsing__ctx__toStr(ctx));
 	str* content = ctx->icontent->s;
 
-	//print full line
-	ulng startIndex = ctx->icontent->index;
-	ulng length     = 0ULL;
-	while(startIndex + length < content->length){
-		if(str__index(content, startIndex + length) == '\n') { break; }
-		length++;
+	//get beginning & end of line
+	ulng endIndex = ctx->icontent->index;
+	while(endIndex < content->length){
+		if(str__index(content, endIndex) == '\n') { break; }
+		endIndex++;
 	}
-	content->data   = content->data + startIndex; //edit directly into content string because, at this state,
-	content->length = length;                     //we don't care, end of program is imminent
-	IO__printLF(content);
+
+	//print full line
+	str* concernedLine = str__sub(content, ctx->icontent->index - (ctx->columnNbr-1LL), endIndex);
+	//IO__printChr('@');
+	IO__printLF(concernedLine);
+	//IO__printChr('@');
+	str__free(concernedLine);
+
+	//print position indicator
+	ulng positionIndex     = ctx->columnNbr - 1LL;
+	str* positionIndicator = Str__new(ctx->columnNbr);
+	for(ulng i=0ULL; i < positionIndex; i++) { str__indexAssign(positionIndicator, i, ' '); }
+	str__indexAssign(positionIndicator, positionIndex, '^');
+	IO__printLF(positionIndicator);
+	str__free(positionIndicator);
 
 	//error
 	Err__error(s, Err__FAILURE);
