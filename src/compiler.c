@@ -16,7 +16,7 @@ str* Value__toStr(valueArg* v, ulng depth) {
 	str* s1;
 	for(ulng i=0; i < depth; i++){ result = str__addChrSelf(result, '\t'); }
 	switch(v->id) {
-		case 0: //VALUE_ARG__NAME:
+		case '\x00': // VALUE_ARG__NAME:
 			result = str__addChrSelf(result, 'N');
 			result = str__addChrSelf(result, '"');
 			s1 = str__copy((str*)(v->content));
@@ -25,7 +25,7 @@ str* Value__toStr(valueArg* v, ulng depth) {
 			result = str__addChrSelf(result, '"');
 			return result;
 		break;
-		case 1: //VALUE_ARG__LITERAL1:
+		case '\x01': //VALUE_ARG__LITERAL1:
 			result = str__addChrSelf(result, '1');
 			result = str__addChrSelf(result, '"');
 			s1 = ulng__toStr((ubyt)(v->content));
@@ -33,7 +33,7 @@ str* Value__toStr(valueArg* v, ulng depth) {
 			result = str__addChrSelf(result, '"');
 			return result;
 		break;
-		case 2: //VALUE_ARG__LITERAL2:
+		case '\x02': //VALUE_ARG__LITERAL2:
 			result = str__addChrSelf(result, '2');
 			result = str__addChrSelf(result, '"');
 			s1 = ulng__toStr((ushr)(v->content));
@@ -41,7 +41,7 @@ str* Value__toStr(valueArg* v, ulng depth) {
 			result = str__addChrSelf(result, '"');
 			return result;
 		break;
-		case 3: //VALUE_ARG__LITERAL4:
+		case '\x03': //VALUE_ARG__LITERAL4:
 			result = str__addChrSelf(result, '4');
 			result = str__addChrSelf(result, '"');
 			s1 = ulng__toStr((uint)(v->content));
@@ -49,7 +49,7 @@ str* Value__toStr(valueArg* v, ulng depth) {
 			result = str__addChrSelf(result, '"');
 			return result;
 		break;
-		case 4: //VALUE_ARG__LITERAL8:
+		case '\x04': //VALUE_ARG__LITERAL8:
 			result = str__addChrSelf(result, '8');
 			result = str__addChrSelf(result, '"');
 			s1 = ulng__toStr((ulng)(v->content));
@@ -57,7 +57,7 @@ str* Value__toStr(valueArg* v, ulng depth) {
 			result = str__addChrSelf(result, '"');
 			return result;
 		break;
-		case 5: //VALUE_ARG__CALL:
+		case '\x05': //VALUE_ARG__CALL:
 			result = str__addChrSelf(result, 'C');
 			result = str__addChrSelf(result, '(');
 			result = str__addChrSelf(result, '\n');
@@ -70,7 +70,7 @@ str* Value__toStr(valueArg* v, ulng depth) {
 			for(ulng i=0; i < depth; i++){ result = str__addChrSelf(result, '\t'); }
 			result = str__addChrSelf(result, ')');
 		break;
-		case 6: //VALUE_ARG__SUBCONTENT:
+		case '\x06': //VALUE_ARG__SUBCONTENT:
 			result = str__addChrSelf(result, 'S');
 			result = str__addChrSelf(result, '{');
 			result = str__addChrSelf(result, '\n');

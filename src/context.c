@@ -3,18 +3,18 @@
 //cycling calls
 str* buildAssembly(lst* pproc_tokens, ulng depth);
 lst* Tokenization__tokenize(Parsing__ctx* ctx);
-lst* Value__readWholeInstructionBody(Parsing__ctx* ctx);
+lst* Value__readWholeInstructionBody(Parsing__ctx* ctx, boo inCall);
 
 //values
-const ubyt VALUE_ARG__NAME       = '\x00';
-const ubyt VALUE_ARG__LITERAL1   = '\x01';
-const ubyt VALUE_ARG__LITERAL2   = '\x02';
-const ubyt VALUE_ARG__LITERAL4   = '\x03';
-const ubyt VALUE_ARG__LITERAL8   = '\x04';
-const ubyt VALUE_ARG__CALL       = '\x05';
-const ubyt VALUE_ARG__SUBCONTENT = '\x06';
+const byt VALUE_ARG__NAME       = '\x00';
+const byt VALUE_ARG__LITERAL1   = '\x01';
+const byt VALUE_ARG__LITERAL2   = '\x02';
+const byt VALUE_ARG__LITERAL4   = '\x03';
+const byt VALUE_ARG__LITERAL8   = '\x04';
+const byt VALUE_ARG__CALL       = '\x05';
+const byt VALUE_ARG__SUBCONTENT = '\x06';
 typedef struct {
-	ubyt id;
+	byt  id;
 	ulng content;
 } valueArg;
 

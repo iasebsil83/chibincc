@@ -173,18 +173,9 @@ valueArg* Value__parseSubcontent(Parsing__ctx* ctx) {
 //call
 valueArg* Value__parseCall(Parsing__ctx* ctx) {
 	printf("VALUE PARSING CALL\n");
-
-	//read given parameters
-	lst* params = Lst__new();
-	while(true) {
-		
-		Value__readWholeInstructionBody(ctx) //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-	}
-
-	//return as generic valueArg element
 	valueArg* result = malloc(sizeof(valueArg));
 	result->id       = VALUE_ARG__CALL;
-	result->content  = (ulng)params;
+	result->content  = (ulng)Value__readWholeInstructionBody(ctx, true);
 	printf("VALUE PARSED CALL\n");
 	return result;
 }
@@ -192,7 +183,7 @@ valueArg* Value__parseCall(Parsing__ctx* ctx) {
 
 
 //name (return true if reached end of instruction)
-boo Value__parseName(chr c, lst* body, Parsing__ctx* ctx) {
+boo Value__parseName(chr c, lst* body, Parsing__ctx* ctx, boo inCall) {
 	printf("VALUE PARSING NAME\n");
 	boo inName           = true;
 	boo maxLengthReached = false;
@@ -214,11 +205,11 @@ boo Value__parseName(chr c, lst* body, Parsing__ctx* ctx) {
 		//look for end delimiter
 		switch(c) {
 
-			//end of instruction => set EOI flag, store NAME, return
-			case '\n': endOfInstruction = true;
+			//end of instruction => set EOI flag, store NAME, return (or separator if inCall)
+			case '\n': if(!inCall) { endOfInstruction = true; }
 
 			//end of name => store NAME, return
-			case ' ':
+			case ':':
 				v->content = (ulng)str__sub(name->s, 0ULL, name->index);
 				lst__append(body, (byt*)v);
 				inName = false; //<=> return
@@ -238,6 +229,12 @@ boo Value__parseName(chr c, lst* body, Parsing__ctx* ctx) {
 				lst__append(body, (byt*)v);
 				lst__append(body, (byt*)Value__parseCall(ctx));
 				inName = false; //<=> return
+			break;
+
+			//end of call
+			case ')':
+				if(!inCall) { Tokenization__error(ctx, ctxt__toStr("Invalid end of call in after NAME value (not inside a call).")); }
+				endOfInstruction = true;
 			break;
 
 			//no delimiter => regular part of the name
@@ -269,7 +266,7 @@ boo Value__parseName(chr c, lst* body, Parsing__ctx* ctx) {
 // ---------------- MAIN ENTRY POINT ----------------
 
 //read body including nested instructions themselves (value parsing)
-lst* Value__readWholeInstructionBody(Parsing__ctx* ctx) {
+lst* Value__readWholeInstructionBody(Parsing__ctx* ctx, boo inCall) {
 	printf("PARSING VALUE CHAIN\n");
 	lst* body = Lst__new();
 
@@ -297,8 +294,8 @@ lst* Value__readWholeInstructionBody(Parsing__ctx* ctx) {
 		printf("PARSING VALUE ITEM\n");
 		switch(c) {
 
-			//end of instruction => end of value parsing
-			case '\n': remaining = false; break;
+			//end of instruction => end of value parsing (or nothing if reading call parameters)
+			case '\n': if(!inCall) { remaining = false; } break;
 
 			//ubyte detected
 			case '1': lst__append(body, (byt*)Value__parseByte(ctx)); break;
@@ -312,19 +309,28 @@ lst* Value__readWholeInstructionBody(Parsing__ctx* ctx) {
 			//ulong detected
 			case '8': lst__append(body, (byt*)Value__parseLong(ctx)); break;
 
+			//end of call
+			case ')':
+				if(!inCall) { Tokenization__error(ctx, ctxt__toStr("Invalid end of call in value chain (not inside a call).")); }
+				remaining = false;
+			break;
+
 			//subcontent
-			case '{': lst__append(body, (byt*)Value__parseSubcontent(ctx)); break;
+			case '{':
+				if(inCall) { Tokenization__error(ctx, ctxt__toStr("Subcontents are not allowed in call parameters.")); }
+				lst__append(body, (byt*)Value__parseSubcontent(ctx));
+			break;
 
 			//other (calls are not allowed here, they must be preceeded by a NAME => only in Value__parseName)
 			default:
 
 				//name detected (1 name detected can lead to several valueArg)
 				if((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_') {
-					if(Value__parseName(c, body, ctx)){ remaining = false; }
+					if(Value__parseName(c, body, ctx, inCall)){ remaining = false; }
 				}
 
 				//unauthorized beginning character
-				else{ Tokenization__error(ctx, ctxt__toStr("Unauthorized beginning character in instruction value.")); }
+				else { Tokenization__error(ctx, ctxt__toStr("Unauthorized beginning character in instruction value.")); }
 		}
 		printf("PARSED VALUE ITEM\n");
 	}

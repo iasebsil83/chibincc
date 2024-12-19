@@ -13,79 +13,79 @@
 //specific token reading
 token* Tokenization__newDefinitionToken_TypeCopy(Parsing__ctx* ctx, ubyt scope) {
 	token* tok = Token__new(ctx, NC__ROLE_DEFINITION | scope | NC__DEF_SCOPE_KIND_COPY);
-	tok->body  = Value__readWholeInstructionBody(ctx);
+	tok->body  = Value__readWholeInstructionBody(ctx, false);
 	return tok;
 }
 
 token* Tokenization__newDefinitionToken_Structure(Parsing__ctx* ctx, ubyt scope) {
 	token* tok = Token__new(ctx, NC__ROLE_DEFINITION | scope | NC__DEF_SCOPE_KIND_STRUCTURE);
-	tok->body  = Value__readWholeInstructionBody(ctx);
+	tok->body  = Value__readWholeInstructionBody(ctx, false);
 	return tok;
 }
 
 token* Tokenization__newDefinitionToken_Function(Parsing__ctx* ctx, ubyt scope) {
 	token* tok = Token__new(ctx, NC__ROLE_DEFINITION | scope | NC__DEF_SCOPE_KIND_FUNCTION);
-	tok->body  = Value__readWholeInstructionBody(ctx);
+	tok->body  = Value__readWholeInstructionBody(ctx, false);
 	return tok;
 }
 
 token* Tokenization__newDefinitionToken_DataItem(Parsing__ctx* ctx, ubyt scope) {
 	token* tok = Token__new(ctx, NC__ROLE_DEFINITION | scope | NC__DEF_SCOPE_KIND_DATA);
-	tok->body  = Value__readWholeInstructionBody(ctx);
+	tok->body  = Value__readWholeInstructionBody(ctx, false);
 	return tok;
 }
 
 token* Tokenization__newExecutionToken_If(Parsing__ctx* ctx) {
 	token* tok = Token__new(ctx, NC__ROLE_EXECUTION | NC__EXE_STATEMENT_IF);
-	tok->body  = Value__readWholeInstructionBody(ctx);
+	tok->body  = Value__readWholeInstructionBody(ctx, false);
 	return tok;
 }
 
 token* Tokenization__newExecutionToken_For(Parsing__ctx* ctx) {
 	token* tok = Token__new(ctx, NC__ROLE_EXECUTION | NC__EXE_STATEMENT_FOR);
-	tok->body  = Value__readWholeInstructionBody(ctx);
+	tok->body  = Value__readWholeInstructionBody(ctx, false);
 	return tok;
 }
 
 token* Tokenization__newExecutionToken_While(Parsing__ctx* ctx) {
 	token* tok = Token__new(ctx, NC__ROLE_EXECUTION | NC__EXE_STATEMENT_WHILE);
-	tok->body  = Value__readWholeInstructionBody(ctx);
+	tok->body  = Value__readWholeInstructionBody(ctx, false);
 	return tok;
 }
 
 token* Tokenization__newExecutionToken_Switch(Parsing__ctx* ctx) {
 	token* tok = Token__new(ctx, NC__ROLE_EXECUTION | NC__EXE_STATEMENT_SWITCH);
-	tok->body  = Value__readWholeInstructionBody(ctx);
+	tok->body  = Value__readWholeInstructionBody(ctx, false);
 	return tok;
 }
 
 token* Tokenization__newExecutionToken_Break(Parsing__ctx* ctx) {
 	token* tok = Token__new(ctx, NC__ROLE_EXECUTION | NC__EXE_STATEMENT_BREAK);
-	tok->body  = Value__readWholeInstructionBody(ctx);
+	tok->body  = Value__readWholeInstructionBody(ctx, false);
 	return tok;
 }
 
 token* Tokenization__newExecutionToken_Continue(Parsing__ctx* ctx) {
 	token* tok = Token__new(ctx, NC__ROLE_EXECUTION | NC__EXE_STATEMENT_CONTINUE);
-	tok->body  = Value__readWholeInstructionBody(ctx);
+	tok->body  = Value__readWholeInstructionBody(ctx, false);
 	return tok;
 }
 
 token* Tokenization__newExecutionToken_Return(Parsing__ctx* ctx) {
 	token* tok = Token__new(ctx, NC__ROLE_EXECUTION | NC__EXE_STATEMENT_RETURN);
-	tok->body  = Value__readWholeInstructionBody(ctx);
+	tok->body  = Value__readWholeInstructionBody(ctx, false);
 	return tok;
 }
 
 token* Tokenization__newExecutionToken_VFC(Parsing__ctx* ctx) {
 	token* tok = Token__new(ctx, NC__ROLE_EXECUTION | NC__EXE_STATEMENT_VFC);
-	tok->body  = Value__readWholeInstructionBody(ctx);
+	tok->body  = Value__readWholeInstructionBody(ctx, false);
 	return tok;
 }
 
 token* Tokenization__newExecutionToken_Assign(Parsing__ctx* ctx) {
 	token* tok = Token__new(ctx, NC__ROLE_EXECUTION | NC__EXE_STATEMENT_ASSIGN);
-	tok->body  = Value__readWholeInstructionBody(ctx);
+	tok->body  = Value__readWholeInstructionBody(ctx, false);
 	return tok;
 }
 
