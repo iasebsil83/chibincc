@@ -3,11 +3,6 @@
 //standards
 #include "std.c"
 
-//cycling calls
-str* buildAssembly(lst* pproc_tokens, ulng depth);
-lst* Tokenization__tokenize(Parsing__ctx* ctx, boo inSubContent);
-lst* Value__readWholeInstructionBody(Parsing__ctx* ctx, boo inCall);
-
 //values
 const byt VALUE_ARG__NAME       = '\x00';
 const byt VALUE_ARG__LITERAL1   = '\x01';
@@ -102,31 +97,6 @@ void token__free(token* t) {
 
 //error during global tokenization
 void Tokenization__error(Parsing__ctx* ctx, str* s) {
-	IO__printLF(Parsing__ctx__toStr(ctx));
-	str* content = ctx->icontent->s;
-
-	//get beginning & end of line
-	ulng endIndex = ctx->icontent->index;
-	while(endIndex < content->length){
-		if(str__index(content, endIndex) == '\n') { break; }
-		endIndex++;
-	}
-
-	//print full line
-	str* concernedLine = str__sub(content, ctx->icontent->index - (ctx->columnNbr-1LL), endIndex);
-	//IO__printChr('@');
-	IO__printLF(concernedLine);
-	//IO__printChr('@');
-	str__free(concernedLine);
-
-	//print position indicator
-	ulng positionIndex     = ctx->columnNbr - 1LL;
-	str* positionIndicator = Str__new(ctx->columnNbr);
-	for(ulng i=0ULL; i < positionIndex; i++) { str__indexAssign(positionIndicator, i, ' '); }
-	str__indexAssign(positionIndicator, positionIndex, '^');
-	IO__printLF(positionIndicator);
-	str__free(positionIndicator);
-
-	//error
+	Parsing__ctx__printLineIndicator(ctx);
 	Err__error(s, Err__FAILURE);
 }

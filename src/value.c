@@ -10,11 +10,19 @@
 
 // ---------------- SPECIFIC ----------------
 
+//cyclic calls
+lst* Tokenization__tokenize(         Parsing__ctx* ctx, boo inSubContent);
+lst* Value__readWholeInstructionBody(Parsing__ctx* ctx, boo inCall      );
+
 //numbers
 void Value__parseByte_error(Parsing__ctx* ctx){ Tokenization__error(ctx, ctxt__toStr("Not enough character to parse ubyt (2 hex required after '1' delimiter).")); }
 valueArg* Value__parseByte(Parsing__ctx* ctx) {
-	printf("VALUE PARSING BYTE\n");
 	str* expectedStr = Str__new(2ULL);
+
+	//debug
+	#ifdef DEBUG_AVAILABLE
+	Parsing__ctx__debug(ctx, "VALUE PARSING BYTE");
+	#endif
 
 	//read expected sequence
 	if(Parsing__ctx__inc(ctx)) { Value__parseByte_error(ctx); }
@@ -30,7 +38,14 @@ valueArg* Value__parseByte(Parsing__ctx* ctx) {
 	valueArg* result = malloc(sizeof(valueArg));
 	result->id       = VALUE_ARG__LITERAL1;
 	result->content  = (ubyt)literal;
-	printf("VALUE PARSED BYTE [%02x]\n", (ubyt)(result->content));
+
+	//debug
+	#ifdef DEBUG_AVAILABLE
+	Parsing__ctx__debug(ctx, "VALUE PARSED BYTE");
+	if(Err__debug_traces) { printf("[%02x]\n", (ubyt)(result->content)); }
+	#endif
+
+	//return result
 	return result;
 }
 
@@ -39,8 +54,12 @@ valueArg* Value__parseByte(Parsing__ctx* ctx) {
 //short
 void Value__parseShort_error(Parsing__ctx* ctx){ Tokenization__error(ctx, ctxt__toStr("Not enough character to parse ushr (4 hex required after '2' delimiter).")); }
 valueArg* Value__parseShort(Parsing__ctx* ctx) {
-	printf("VALUE PARSING SHORT\n");
 	str* expectedStr = Str__new(4ULL);
+
+	//debug
+	#ifdef DEBUG_AVAILABLE
+	Parsing__ctx__debug(ctx, "VALUE PARSING SHORT");
+	#endif
 
 	//read expected sequence
 	if(Parsing__ctx__inc(ctx)) { Value__parseShort_error(ctx); }
@@ -60,7 +79,14 @@ valueArg* Value__parseShort(Parsing__ctx* ctx) {
 	valueArg* result = malloc(sizeof(valueArg));
 	result->id       = VALUE_ARG__LITERAL2;
 	result->content  = (ushr)literal;
-	printf("VALUE PARSED SHORT [%04x]\n", (ushr)(result->content));
+
+	//debug
+	#ifdef DEBUG_AVAILABLE
+	Parsing__ctx__debug(ctx, "VALUE PARSED SHORT");
+	if(Err__debug_traces) { printf("[%04x]\n", (ushr)(result->content)); }
+	#endif
+
+	//return result
 	return result;
 }
 
@@ -69,8 +95,11 @@ valueArg* Value__parseShort(Parsing__ctx* ctx) {
 //integer
 void Value__parseInteger_error(Parsing__ctx* ctx){ Tokenization__error(ctx, ctxt__toStr("Not enough character to parse uint (8 hex required after '4' delimiter).")); }
 valueArg* Value__parseInteger(Parsing__ctx* ctx) {
-	printf("VALUE PARSING INTEGER\n");
 	str* expectedStr = Str__new(8ULL);
+
+	#ifdef DEBUG_AVAILABLE
+	Parsing__ctx__debug(ctx, "VALUE PARSING INTEGER");
+	#endif
 
 	//read expected sequence
 	if(Parsing__ctx__inc(ctx)) { Value__parseInteger_error(ctx); }
@@ -98,7 +127,14 @@ valueArg* Value__parseInteger(Parsing__ctx* ctx) {
 	valueArg* result = malloc(sizeof(valueArg));
 	result->id       = VALUE_ARG__LITERAL4;
 	result->content  = (uint)literal;
-	printf("VALUE PARSED INTEGER [%08x]\n", (uint)(result->content));
+
+	//debug
+	#ifdef DEBUG_AVAILABLE
+	Parsing__ctx__debug(ctx, "VALUE PARSED INTEGER");
+	if(Err__debug_traces) { printf("[%08x]\n", (uint)(result->content)); }
+	#endif
+
+	//return result
 	return result;
 }
 
@@ -107,8 +143,12 @@ valueArg* Value__parseInteger(Parsing__ctx* ctx) {
 //long
 void Value__parseLong_error(Parsing__ctx* ctx){ Tokenization__error(ctx, ctxt__toStr("Not enough character to parse ulng (16 hex required after '8' delimiter).")); }
 valueArg* Value__parseLong(Parsing__ctx* ctx) {
-	printf("VALUE PARSING LONG\n");
 	str* expectedStr = Str__new(16ULL);
+
+	//debug
+	#ifdef DEBUG_AVAILABLE
+	Parsing__ctx__debug(ctx, "VALUE PARSING LONG");
+	#endif
 
 	//read expected sequence
 	if(Parsing__ctx__inc(ctx)) { Value__parseLong_error(ctx); }
@@ -152,7 +192,14 @@ valueArg* Value__parseLong(Parsing__ctx* ctx) {
 	valueArg* result = malloc(sizeof(valueArg));
 	result->id       = VALUE_ARG__LITERAL8;
 	result->content  = (ulng)literal;
-	printf("VALUE PARSED LONG [%016llx]\n", (ulng)(result->content));
+
+	//debug
+	#ifdef DEBUG_AVAILABLE
+	Parsing__ctx__debug(ctx, "VALUE PARSED LONG");
+	if(Err__debug_traces) { printf("[%016llx]\n", (ulng)(result->content)); }
+	#endif
+
+	//return result
 	return result;
 }
 
@@ -160,11 +207,9 @@ valueArg* Value__parseLong(Parsing__ctx* ctx) {
 
 //subcontent
 valueArg* Value__parseSubcontent(Parsing__ctx* ctx) {
-	printf("VALUE PARSING SUBCONTENT\n");
 	valueArg* result = malloc(sizeof(valueArg));
 	result->id       = VALUE_ARG__SUBCONTENT;
 	result->content  = (ulng)Tokenization__tokenize(ctx, true);
-	printf("VALUE PARSED SUBCONTENT\n");
 	return result;
 }
 
@@ -172,11 +217,9 @@ valueArg* Value__parseSubcontent(Parsing__ctx* ctx) {
 
 //call
 valueArg* Value__parseCall(Parsing__ctx* ctx) {
-	printf("VALUE PARSING CALL\n");
 	valueArg* result = malloc(sizeof(valueArg));
 	result->id       = VALUE_ARG__CALL;
 	result->content  = (ulng)Value__readWholeInstructionBody(ctx, true);
-	printf("VALUE PARSED CALL\n");
 	return result;
 }
 
@@ -184,10 +227,14 @@ valueArg* Value__parseCall(Parsing__ctx* ctx) {
 
 //name (return true if reached end of instruction)
 boo Value__parseName(chr c, lst* body, Parsing__ctx* ctx, boo inCall) {
-	printf("VALUE PARSING NAME\n");
 	boo inName           = true;
 	boo maxLengthReached = false;
 	boo endOfInstruction = false;
+
+	//debug
+	#ifdef DEBUG_AVAILABLE
+	Parsing__ctx__debug(ctx, "VALUE PARSING NAME(s)");
+	#endif
 
 	//prepare NAME storage
 	istr* name = IStr__new(NC__NAME_LENGTH_MAX);
@@ -205,38 +252,81 @@ boo Value__parseName(chr c, lst* body, Parsing__ctx* ctx, boo inCall) {
 		//look for end delimiter
 		switch(c) {
 
-			//end of instruction => set EOI flag, store NAME, return (or separator if inCall)
+
+
+			//end of instruction => set EOI flag and then continue as it was end-of-name
 			case '\n': if(!inCall) { endOfInstruction = true; }
 
-			//end of name => store NAME, return
+			//end of name
 			case ':':
+
+				//store name
 				v->content = (ulng)str__sub(name->s, 0ULL, name->index);
 				lst__append(body, (byt*)v);
+
+				//debug
+				#ifdef DEBUG_AVAILABLE
+				Parsing__ctx__debug(ctx, "\tNAME:\"");
+				IO__print((str*)(v->content));
+				IO__ctxt__printLF("\"");
+				#endif
+
+				//continue the right way (return)
 				inName = false; //<=> return
 			break;
 
-			//store NAME, parse subcontent, return
+
+
+			//start a new subcontent
 			case '{':
 				if(inCall) { Tokenization__error(ctx, ctxt__toStr("Subcontents are not allowed in call parameters.")); }
+
+				//store name
 				v->content = (ulng)str__sub(name->s, 0ULL, name->index);
 				lst__append(body, (byt*)v);
+
+				//debug
+				#ifdef DEBUG_AVAILABLE
+				Parsing__ctx__debug(ctx, "\tNAME:\"");
+				IO__print((str*)(v->content));
+				IO__ctxt__printLF("\"");
+				#endif
+
+				//continue parsing on the right way (parseSubcontent, return)
 				lst__append(body, (byt*)Value__parseSubcontent(ctx));
 				inName = false; //<=> return
 			break;
 
-			//store NAME, parse call, return
+
+
+			//start a new call
 			case '(':
+
+				//store name
 				v->content = (ulng)str__sub(name->s, 0ULL, name->index);
 				lst__append(body, (byt*)v);
+
+				//debug
+				#ifdef DEBUG_AVAILABLE
+				Parsing__ctx__debug(ctx, "\tNAME:\"");
+				IO__print((str*)(v->content));
+				IO__ctxt__printLF("\"");
+				#endif
+
+				//continue parsing on the right way (parseCall, return)
 				lst__append(body, (byt*)Value__parseCall(ctx));
 				inName = false; //<=> return
 			break;
+
+
 
 			//end of call
 			case ')':
 				if(!inCall) { Tokenization__error(ctx, ctxt__toStr("Can't have end-of-call outside a call.")); }
 				endOfInstruction = true;
 			break;
+
+
 
 			//no delimiter => regular part of the name
 			default:
@@ -248,11 +338,13 @@ boo Value__parseName(chr c, lst* body, Parsing__ctx* ctx, boo inCall) {
 		}
 	}
 
+	//debug
+	#ifdef DEBUG_AVAILABLE
+	Parsing__ctx__debug(ctx, "VALUE PARSED NAME(s)");
+	#endif
+
 	//free temporay structure
-	printf("VALUE PARSED NAME [");
 	name->s->length = name->index + 1LL;
-	IO__print(name->s);
-	printf("]\n");
 	istr__free(name, true);
 
 	//share the information whether other values are to be parsed or not for the current instruction
@@ -268,21 +360,15 @@ boo Value__parseName(chr c, lst* body, Parsing__ctx* ctx, boo inCall) {
 
 //read body including nested instructions themselves (value parsing)
 lst* Value__readWholeInstructionBody(Parsing__ctx* ctx, boo inCall) {
-	printf("PARSING VALUE CHAIN\n");
 	lst* body = Lst__new();
 
-	/*IO__ctxt__printLF("BODY STEP1 [");
-	str* TECHT = Parsing__ctx__toStr(ctx);
-	IO__printLF(TECHT);
-	str__free(TECHT);
-	IO__ctxt__printLF("BODY STEP1 ]");*/
+	//debug
+	#ifdef DEBUG_AVAILABLE
+	if(inCall) { Parsing__ctx__debug(ctx, "PARSING VALUE CHAIN INSIDE CALL"); }
+	else       { Parsing__ctx__debug(ctx, "PARSING VALUE CHAIN");             }
+	#endif
 
-	//starting position
-	//istr* icontent   = ctx->icontent;
-	//ulng  startIndex = icontent->index;
-
-	//end of line => end of instruction
-	//IO__ctxt__printLF("BODY STEP2");
+	//reading value chain
 	boo remaining = true;
 	while(remaining) {
 		if(Parsing__ctx__inc(ctx)) { break; }
@@ -292,7 +378,6 @@ lst* Value__readWholeInstructionBody(Parsing__ctx* ctx, boo inCall) {
 		if(c == '\t') { continue; }
 
 		//value detection from 1st character
-		printf("PARSING VALUE ITEM\n");
 		switch(c) {
 
 			//end of instruction => end of value parsing (or nothing if reading call parameters)
@@ -333,18 +418,14 @@ lst* Value__readWholeInstructionBody(Parsing__ctx* ctx, boo inCall) {
 				//unauthorized beginning character
 				else { Tokenization__error(ctx, ctxt__toStr("Unauthorized beginning character in instruction value.")); }
 		}
-		printf("PARSED VALUE ITEM\n");
 	}
-	//IO__ctxt__printLF("BODY STEP3");
 
-	//update value now that we have it
-	//ulng bodyLength = icontent->index - startIndex;
-	//str* body       = Str__new(bodyLength);
-	//IO__ctxt__printLF("BODY STEP4");
-	//for(ulng i=0ULL; i < bodyLength; i++) { str__indexAssign(body, i, str__index(icontent->s, startIndex + i)); }
-	//IO__ctxt__printLF("BODY STEP5");
+	//debug
+	#ifdef DEBUG_AVAILABLE
+	if(inCall) { Parsing__ctx__debug(ctx, "PARSED VALUE CHAIN INSIDE_CALL"); }
+	else       { Parsing__ctx__debug(ctx, "PARSED VALUE CHAIN");             }
+	#endif
 
 	//return value args (which is token's value)
-	printf("PARSED VALUE CHAIN\n");
 	return body;
 }

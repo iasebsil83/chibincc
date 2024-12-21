@@ -18,6 +18,9 @@ byt OPTION__LINK    = '\x03';
 byt OPTION__OUTPUT  = '\x04';
 byt OPTION__PIC     = '\x05';
 byt OPTION__SDL     = '\x06';
+#ifdef DEBUG_AVAILABLE
+byt OPTION__DEBUG   = '\x07';
+#endif
 
 
 
@@ -73,7 +76,17 @@ tab* collectDependencies_includes(opt* o){
 byt zmain(tab* args) {
 
 	//opts & args
+	#ifdef DEBUG_AVAILABLE
+	tab* opts = Tab__new(8UL, NULL);
+	tab_opt__indexAssign(opts, OPTION__DEBUG, Opt__new(
+		'd', ctxt__toStr("debug"), false,
+		Tab__new_1(
+			ctxt__toStr("Enable debug traces.")
+		)
+	));
+	#else
 	tab* opts = Tab__new(7UL, NULL);
+	#endif
 	tab_opt__indexAssign(opts, OPTION__ASM, Opt__new(
 		'a', ctxt__toStr("asm"), false,
 		Tab__new_2(
@@ -125,6 +138,11 @@ byt zmain(tab* args) {
 	));
 	Arg__parse(args, opts);
 
+	//debug
+	#ifdef DEBUG_AVAILABLE
+	if(opt__enabled(tab_opt__index(opts, OPTION__DEBUG))) { Err__debug_traces = true; }
+	#endif
+
 	//help menu
 	if(opt__enabled(tab_opt__index(opts, OPTION__HELP))) { printUsage(opts); }
 
@@ -153,11 +171,6 @@ byt zmain(tab* args) {
 		str* inputPath = tab_str__index(args, f);
 		Path__errorIfNotFile(inputPath, Err__FAILURE);
 
-		//debug
-		IO__ctxt__print("Compiling file '");
-		IO__print(inputPath);
-		IO__ctxt__printLF("' {");
-
 		//compile into ASM
 		if(asmOnly) {
 			if(outputPath == NULL) { outputPath = str__add(Path__name(inputPath), ctxt__toStr(".asm")); }
@@ -166,17 +179,13 @@ byt zmain(tab* args) {
 			str__free(result);
 		}
 
-		//compile into OBJ/SDL [default]
+		//compile into OBJ [default]
 		else {
 			if(outputPath == NULL) { outputPath = str__add(Path__name(inputPath), ctxt__toStr(".o")); }
 			str* result = compileIntoOBJ(inputPath, includeDirs, SDLDeps, usePIC);
 			IO__writeFile(outputPath, result);
 			str__free(result);
 		}
-
-		//debug
-		IO__printChr('}');
-		IO__printChr('\n');
 	}
 
 	//terminated successfully

@@ -15,15 +15,19 @@
 //compile
 str* compileIntoASM(str* inputPath, tab* includeDirs) {
 
-	//debug
-	IO__ctxt__printLF("  Compiling into ASM {");
-	IO__ctxt__print("    inputPath[");
-	IO__print(inputPath);
-	IO__ctxt__printLF("    ]");
-	IO__ctxt__print("    inc[");
-	for(ulng i=0UL; i < includeDirs->length; i++) { IO__print(tab_str__index(includeDirs, i)); IO__ctxt__print(", "); }
-	IO__ctxt__printLF("]");
-	IO__ctxt__printLF("  }");
+	//debug <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< into one call
+	#ifdef DEBUG_AVAILABLE
+	Err__ctxt__debugLF("Compiling into ASM {");
+	Err__ctxt__debug("\tinputPath[");
+	if(Err__debug_traces){
+		IO__print(inputPath);
+		IO__ctxt__printLF("]");
+		Err__ctxt__debug("\tincludeDirs[");
+		for(ulng i=0UL; i < includeDirs->length; i++) { IO__print(tab_str__index(includeDirs, i)); IO__ctxt__print(", "); }
+		IO__ctxt__printLF("]");
+	}
+	Err__ctxt__debugLF("}");
+	#endif
 
 	//read given file
 	str* inputText = IO__readFile(inputPath);
@@ -43,20 +47,24 @@ str* compileIntoASM(str* inputPath, tab* includeDirs) {
 
 str* compileIntoOBJ(str* inputPath, tab* includeDirs, tab* SDLDeps, boo usePIC) {
 
-	//debug
-	IO__ctxt__printLF("  Compiling into OBJ {");
-	IO__ctxt__print("    inputPath[");
-	IO__print(inputPath);
-	IO__ctxt__printLF("    ]");
-	IO__ctxt__print("    inc[");
-	for(ulng i=0UL; i < includeDirs->length; i++) { IO__print(tab_str__index(includeDirs, i)); IO__ctxt__print(", "); }
-	IO__ctxt__printLF("]");
-	IO__ctxt__print("    SDLDeps[");
-	for(ulng i=0UL; i < SDLDeps->length; i++) { IO__print(tab_str__index(SDLDeps, i)); IO__ctxt__print(", "); }
-	IO__ctxt__printLF("]");
-	if(usePIC) { IO__ctxt__printLF("    usePIC[true]");  }
-	else       { IO__ctxt__printLF("    usePIC[false]"); }
-	IO__ctxt__printLF("  }");
+	//debug <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< into one call
+	#ifdef DEBUG_AVAILABLE
+	Err__ctxt__debugLF("Compiling into OBJ {");
+	Err__ctxt__debug("\tinputPath[");
+	if(Err__debug_traces) {
+		IO__print(inputPath);
+		IO__ctxt__printLF("]");
+		Err__ctxt__debug("\tincludeDirs[");
+		for(ulng i=0UL; i < includeDirs->length; i++) { IO__print(tab_str__index(includeDirs, i)); IO__ctxt__print(", "); }
+		IO__ctxt__printLF("]");
+		Err__ctxt__debug("\tSDLDeps[");
+		for(ulng i=0UL; i < SDLDeps->length; i++) { IO__print(tab_str__index(SDLDeps, i)); IO__ctxt__print(", "); }
+		IO__ctxt__printLF("]");
+	}
+	if(usePIC) { Err__ctxt__debugLF("\tusePIC[true]");  }
+	else       { Err__ctxt__debugLF("\tusePIC[false]"); }
+	Err__ctxt__debugLF("}");
+	#endif
 
 	//compile into ASM first
 	str* asmText = compileIntoASM(inputPath, includeDirs);

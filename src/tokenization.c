@@ -100,28 +100,20 @@ token* Tokenization__newExecutionToken_Assign(Parsing__ctx* ctx) {
 lst* Tokenization__tokenize(Parsing__ctx* ctx, boo inSubcontent) {
 	lst* tokens = Lst__new();
 
+	//debug
+	#ifdef DEBUG_AVAILABLE
+	if(inSubcontent) { Parsing__ctx__debug(ctx, "BEGINNING SUBTOKENIZATION");     }
+	else             { Parsing__ctx__debug(ctx, "BEGINNING GLOBAL TOKENIZATION"); }
+	#endif
+
 	//for subcontents only
 	boo reachedEndOfSubcontent = false;
 
 	//as long as we got things to read
-	ulng debugStartIndex = 0ULL;
 	boo remaining = true;
 	while(remaining) {
 		if(Parsing__ctx__inc(ctx)) { break; }
 		chr c = Parsing__ctx__get(ctx);
-
-		//dbug
-		istr* currentIStr = ctx->icontent;
-		IO__printChr('[');
-		for(ulng aaa=debugStartIndex; aaa <= currentIStr->index; aaa++) {
-			IO__printChr(str__index(currentIStr->s, aaa));
-		}
-		//str* TESTUX = Parsing__ctx__toStr(ctx);
-		//IO__printLF(TESTUX);
-		//str__free(TESTUX);
-		debugStartIndex = currentIStr->index;
-		IO__printChr(']');
-		IO__printChr('\n');
 
 		//skip beginning indent or line feed
 		if(c == '\t' || c == '\n') { continue; }
@@ -134,7 +126,9 @@ lst* Tokenization__tokenize(Parsing__ctx* ctx, boo inSubcontent) {
 
 			//DEF
 			case 'd':
-				IO__ctxt__printLF("DEF {");
+				#ifdef DEBUG_AVAILABLE
+				Parsing__ctx__debug(ctx, "DEF {");
+				#endif
 
 				//2nd rank : DEF SCOPE
 				if(Parsing__ctx__inc(ctx)) { Tokenization__error(ctx, ctxt__toStr("Missing DEF SCOPE.")); }
@@ -162,14 +156,18 @@ lst* Tokenization__tokenize(Parsing__ctx* ctx, boo inSubcontent) {
 					break;
 					default: Tokenization__error(ctx, ctxt__toStr("Invalid DEF SCOPE given."));
 				}
-				IO__ctxt__printLF("DEF }");
+				#ifdef DEBUG_AVAILABLE
+				Parsing__ctx__debug(ctx, "} DEF");
+				#endif
 			break;
 
 
 
 			//EXE
 			case 'x':
-				IO__ctxt__printLF("EXE {");
+				#ifdef DEBUG_AVAILABLE
+				Parsing__ctx__debug(ctx, "EXE {");
+				#endif
 
 				//2nd rank : EXE STATEMENT
 				if(Parsing__ctx__inc(ctx)) { Tokenization__error(ctx, ctxt__toStr("Invalid DEF SCOPE given.")); }
@@ -192,7 +190,9 @@ lst* Tokenization__tokenize(Parsing__ctx* ctx, boo inSubcontent) {
 					case 'a': lst__append(tokens, (byt*)Tokenization__newExecutionToken_Assign(  ctx)); break;
 					default: Tokenization__error(ctx, ctxt__toStr("Invalid EXE STATEMENT given."));
 				}
-				IO__ctxt__printLF("EXE }");
+				#ifdef DEBUG_AVAILABLE
+				Parsing__ctx__debug(ctx, "} EXE");
+				#endif
 			break;
 
 
@@ -209,7 +209,12 @@ lst* Tokenization__tokenize(Parsing__ctx* ctx, boo inSubcontent) {
 		}
 	}
 	if(inSubcontent && !reachedEndOfSubcontent) { Tokenization__error(ctx, ctxt__toStr("Incomplete subcontent at end of file.")); }
-	IO__ctxt__printLF("TOKENIZATION END REACHED");
+
+	//debug
+	#ifdef DEBUG_AVAILABLE
+	if(inSubcontent) { Parsing__ctx__debug(ctx, "ENDING SUBTOKENIZATION");     }
+	else             { Parsing__ctx__debug(ctx, "ENDING GLOBAL TOKENIZATION"); }
+	#endif
 
 	//final result
 	return tokens;

@@ -24,8 +24,8 @@ typedef unsigned long long ulng;
 
 //booleans
 typedef byt boo;
-boo false = '\x00';
-boo true  = '\x01';
+const boo false = '\x00';
+const boo true  = '\x01';
 
 
 
@@ -529,18 +529,35 @@ void dmb__flush(dmb* d) {
 //definitions
 const ubyt Err__SUCCESS = '\x00';
 const ubyt Err__FAILURE = '\x01';
-str Err__DEBUG_HEADER = { 10, "[ DEBUG ] " };
-str Err__WARNN_HEADER = { 10, "[WARNING] " };
-str Err__ERROR_HEADER = { 10, "[ ERROR ] " };
-#define Err__DEBUG
+str Err__DEBUG_HEADER   = { 10ULL, "[ DEBUG ] " };
+str Err__WARNN_HEADER   = { 10ULL, "[WARNING] " };
+str Err__ERROR_HEADER   = { 10ULL, "[ ERROR ] " };
+
+//debug
+#define DEBUG_AVAILABLE
+#ifdef DEBUG_AVAILABLE
+	boo Err__debug_traces = false;
+	void Err__debug(str* msg) {
+		if(Err__debug_traces) {
+			IO__print(&Err__DEBUG_HEADER);
+			IO__print(msg);
+		}
+	}
+	void Err__ctxt__debug(chr* msg) { //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< TEMPORARY FOR CTXT
+		if(Err__debug_traces) {
+			str* s_msg = ctxt__toStr(msg);
+			Err__debug(s_msg);
+		}
+	}
+	void Err__ctxt__debugLF(chr* msg) { //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< TEMPORARY FOR CTXT
+		if(Err__debug_traces) {
+			Err__ctxt__debug(msg);
+			IO__printChr('\n');
+		}
+	}
+#endif
 
 //functions
-void Err__debug(str* msg) {
-	#ifdef Err__DEBUG
-	IO__print(&Err__DEBUG_HEADER);
-	IO__printLF(msg);
-	#endif
-}
 void Err__warning(str* msg) {
 	IO__print(&Err__WARNN_HEADER);
 	IO__printLF(msg);
@@ -1258,14 +1275,54 @@ str* Parsing__ctx__toStr(Parsing__ctx* ctx) {
 
 	//columnNbr
 	str* columnNbrStr = ulng__toStr(ctx->columnNbr);
-	resultStr = str__addSelf(resultStr, columnNbrStr);
+	resultStr         = str__addSelf(resultStr, columnNbrStr);
 	str__free(columnNbrStr);
 	return resultStr;
 }
 Parsing__ctx* Parsing__ctx__copy(Parsing__ctx* ctx) {
-	Parsing__ctx* ctx2 = Parsing__Ctx__new(ctx->filename, ctx->icontent->s);
+	Parsing__ctx* ctx2    = Parsing__Ctx__new(ctx->filename, ctx->icontent->s);
 	ctx2->lineNbr         = ctx->lineNbr;
 	ctx2->columnNbr       = ctx->columnNbr;
 	ctx2->icontent->index = ctx->icontent->index;
 	return ctx2;
 }
+void Parsing__ctx__printLineIndicator(Parsing__ctx* ctx) {
+	IO__printLF(Parsing__ctx__toStr(ctx));
+	str* content = ctx->icontent->s;
+
+	//set beginning & end of line
+	ulng begIndex, endIndex;
+	if(ctx->icontent->index == -1LL){ begIndex = 0ULL; endIndex = 0ULL; } //invalid value (istr starting index)
+	else {
+		begIndex = ctx->icontent->index - (ctx->columnNbr-1LL);
+		endIndex = ctx->icontent->index;
+	}
+	if(begIndex > endIndex) { begIndex = 0ULL; } //that mean we are in the first line (cannot subtract columnNbr)
+
+	//read to get real end of line
+	while(endIndex < content->length){
+		if(str__index(content, endIndex) == '\n') { break; }
+		endIndex++;
+	}
+
+	//print full line
+	str* concernedLine = str__sub(content, begIndex, endIndex);
+	IO__printLF(concernedLine);
+	str__free(concernedLine);
+
+	//print position indicator
+	ulng positionIndex     = ctx->columnNbr - 1LL;
+	str* positionIndicator = Str__new(ctx->columnNbr);
+	for(ulng i=0ULL; i < positionIndex; i++) { str__indexAssign(positionIndicator, i, ' '); }
+	str__indexAssign(positionIndicator, positionIndex, '^');
+	IO__printLF(positionIndicator);
+	str__free(positionIndicator);
+}
+#ifdef DEBUG_AVAILABLE
+void Parsing__ctx__debug(Parsing__ctx* ctx, chr* msg){ //str* msg){ //TEMPORARY SHORTCUT FOR ALLOWING DIRECT USE OF CTXT
+	if(Err__debug_traces) {
+		Parsing__ctx__printLineIndicator(ctx);
+		Err__ctxt__debugLF(msg);
+	}
+}
+#endif
