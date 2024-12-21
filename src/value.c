@@ -163,7 +163,7 @@ valueArg* Value__parseSubcontent(Parsing__ctx* ctx) {
 	printf("VALUE PARSING SUBCONTENT\n");
 	valueArg* result = malloc(sizeof(valueArg));
 	result->id       = VALUE_ARG__SUBCONTENT;
-	result->content  = (ulng)Tokenization__tokenize(ctx);
+	result->content  = (ulng)Tokenization__tokenize(ctx, true);
 	printf("VALUE PARSED SUBCONTENT\n");
 	return result;
 }
@@ -217,6 +217,7 @@ boo Value__parseName(chr c, lst* body, Parsing__ctx* ctx, boo inCall) {
 
 			//store NAME, parse subcontent, return
 			case '{':
+				if(inCall) { Tokenization__error(ctx, ctxt__toStr("Subcontents are not allowed in call parameters.")); }
 				v->content = (ulng)str__sub(name->s, 0ULL, name->index);
 				lst__append(body, (byt*)v);
 				lst__append(body, (byt*)Value__parseSubcontent(ctx));
@@ -233,7 +234,7 @@ boo Value__parseName(chr c, lst* body, Parsing__ctx* ctx, boo inCall) {
 
 			//end of call
 			case ')':
-				if(!inCall) { Tokenization__error(ctx, ctxt__toStr("Invalid end of call in after NAME value (not inside a call).")); }
+				if(!inCall) { Tokenization__error(ctx, ctxt__toStr("Can't have end-of-call outside a call.")); }
 				endOfInstruction = true;
 			break;
 
@@ -311,7 +312,7 @@ lst* Value__readWholeInstructionBody(Parsing__ctx* ctx, boo inCall) {
 
 			//end of call
 			case ')':
-				if(!inCall) { Tokenization__error(ctx, ctxt__toStr("Invalid end of call in value chain (not inside a call).")); }
+				if(!inCall) { Tokenization__error(ctx, ctxt__toStr("Can't have end-of-call outside a call.")); }
 				remaining = false;
 			break;
 

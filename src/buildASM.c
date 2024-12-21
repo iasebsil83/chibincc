@@ -1,16 +1,18 @@
 // ---------------- DEPENDENCIES ----------------
 
-//compilation
-#include "preprocessor.c"
+//nothing for the moment
+//#include ".c"
 
 
 
 
 
 
-// ---------------- COMPILING ----------------
+// ---------------- TOOLS ----------------
 
-//
+str* buildASM(lst* tokens, ulng depth);
+
+//output <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< TEMPORARY DEBUG
 str* Value__toStr(valueArg* v, ulng depth) {
 	str* result = Str__new(0ULL);
 	str* s1;
@@ -74,7 +76,7 @@ str* Value__toStr(valueArg* v, ulng depth) {
 			result = str__addChrSelf(result, 'S');
 			result = str__addChrSelf(result, '{');
 			result = str__addChrSelf(result, '\n');
-			s1 = buildAssembly((lst*)(v->content), depth+1ULL);
+			s1 = buildASM((lst*)(v->content), depth+1ULL);
 			result = str__addSelf(result, s1);
 			str__free(s1);
 			for(ulng i=0; i < depth; i++){ result = str__addChrSelf(result, '\t'); }
@@ -87,13 +89,21 @@ str* Value__toStr(valueArg* v, ulng depth) {
 	return result;
 }
 
-str* buildAssembly(lst* pproc_tokens, ulng depth) {
+
+
+
+
+
+// ---------------- COMPILATION ----------------
+
+//produce assembly text from tokens
+str* buildASM(lst* tokens, ulng depth) {
 	str* resultText = Str__new(0ULL);
 	str* ID_TEXT   = ctxt__toStr("id:   ");
 	str* CTX_TEXT  = ctxt__toStr("ctx:  ");
 	str* BODY_TEXT = ctxt__toStr("body: ");
-	for(ulng t=0ULL; t < lst__length(pproc_tokens); t++) {
-		token* tok = (token*)lst__index(pproc_tokens, t);
+	for(ulng t=0ULL; t < lst__length(tokens); t++) {
+		token* tok = (token*)lst__index(tokens, t);
 
 		//ID
 		for(ulng i=0; i < depth; i++){ resultText = str__addChrSelf(resultText, '\t'); }
@@ -131,56 +141,3 @@ str* buildAssembly(lst* pproc_tokens, ulng depth) {
 	str__free(CTX_TEXT );
 	return resultText;
 }
-
-
-
-
-
-
-// ---------------- MAIN ----------------
-
-//compile
-str* compile(str* inputPath, tab* includeDirs) { //, tab* SDLDeps, boo usePIC) {
-
-	//debug
-	IO__ctxt__printLF("  Compiling {");
-	IO__ctxt__print("    inputPath[");
-	IO__print(inputPath);
-	IO__ctxt__printLF("    ]");
-	IO__ctxt__print("    inc[");
-	for(ulng i=0UL; i < includeDirs->length; i++) { IO__print(tab_str__index(includeDirs, i)); IO__ctxt__print(", "); }
-	IO__ctxt__printLF("]");
-	//IO__print("    SDLDeps["));
-	//for(ulng i=0UL; i < SDLDeps->length; i++) { IO__print(tab_str__index(SDLDeps, i)); IO__print(", ")); }
-	//IO__printLF("]"));
-	//if(usePIC) { IO__printLF("    usePIC[true]")); }
-	//else       { IO__printLF("    usePIC[false]")); }
-	IO__ctxt__printLF("  }");
-
-	//preprocess first
-	lst* pproc_tokens = preprocess(inputPath, includeDirs);
-
-	//compile
-	str* result = buildAssembly(pproc_tokens, 0ULL);
-	for(ulng t=0ULL; t < lst__length(pproc_tokens); t++) { token__free((token*)lst__index(pproc_tokens, t)); }
-	lst__free(pproc_tokens, false);
-
-	//return result
-	return result;
-}
-/*  Obj *prog = parse(tok);
-
-  // Open a temporary output buffer.
-  char *buf;
-  size_t buflen;
-  FILE *output_buf = open_memstream(&buf, &buflen);
-
-  // Traverse the AST to emit assembly.
-  codegen(prog, output_buf);
-  fclose(output_buf);
-
-  // Write the asembly text to a file.
-  FILE *out = open_file(output_file);
-  fwrite(buf, buflen, 1, out);
-  fclose(out);
-*/

@@ -1,8 +1,11 @@
 // ---------------- DEFINITIONS ----------------
 
+//standards
+#include "std.c"
+
 //cycling calls
 str* buildAssembly(lst* pproc_tokens, ulng depth);
-lst* Tokenization__tokenize(Parsing__ctx* ctx);
+lst* Tokenization__tokenize(Parsing__ctx* ctx, boo inSubContent);
 lst* Value__readWholeInstructionBody(Parsing__ctx* ctx, boo inCall);
 
 //values

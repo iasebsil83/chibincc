@@ -97,12 +97,16 @@ token* Tokenization__newExecutionToken_Assign(Parsing__ctx* ctx) {
 // ---------------- MAIN ENTRY POINT ----------------
 
 //text to token list
-lst* Tokenization__tokenize(Parsing__ctx* ctx) {
+lst* Tokenization__tokenize(Parsing__ctx* ctx, boo inSubcontent) {
 	lst* tokens = Lst__new();
+
+	//for subcontents only
+	boo reachedEndOfSubcontent = false;
 
 	//as long as we got things to read
 	ulng debugStartIndex = 0ULL;
-	while(true) {
+	boo remaining = true;
+	while(remaining) {
 		if(Parsing__ctx__inc(ctx)) { break; }
 		chr c = Parsing__ctx__get(ctx);
 
@@ -193,12 +197,19 @@ lst* Tokenization__tokenize(Parsing__ctx* ctx) {
 
 
 
+			//end of subcontent
+			case '}':
+				if(!inSubcontent) { Tokenization__error(ctx, ctxt__toStr("Can't have end-of-subcontent out of subcontent.")); }
+				reachedEndOfSubcontent = true;
+				remaining = false;
+			break;
+
 			//undefined
 			default: Tokenization__error(ctx, ctxt__toStr("Invalid ROLE given."));
 		}
 	}
-
-	IO__ctxt__printLF("END REACHED");
+	if(inSubcontent && !reachedEndOfSubcontent) { Tokenization__error(ctx, ctxt__toStr("Incomplete subcontent at end of file.")); }
+	IO__ctxt__printLF("TOKENIZATION END REACHED");
 
 	//final result
 	return tokens;
@@ -207,5 +218,5 @@ lst* Tokenization__tokenize(Parsing__ctx* ctx) {
 //parsing entry point
 lst* Tokenization__run(str* filename, str* inputText) {
 	Parsing__ctx* ctx = Parsing__Ctx__new(filename, inputText);
-	return Tokenization__tokenize(ctx);
+	return Tokenization__tokenize(ctx, false);
 }

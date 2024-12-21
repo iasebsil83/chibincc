@@ -1,10 +1,7 @@
 // ---------------- DEPENDENCIES ----------------
 
-//standards
-#include "std.c"
-
 //compilation
-#include "assembler.c"
+#include "compilation.c"
 
 
 
@@ -19,14 +16,8 @@ byt OPTION__HELP    = '\x01';
 byt OPTION__INCLUDE = '\x02';
 byt OPTION__LINK    = '\x03';
 byt OPTION__OUTPUT  = '\x04';
-byt OPTION__PRE     = '\x05'; //preprocessor
-byt OPTION__PIC     = '\x06';
-byt OPTION__SDL     = '\x07';
-
-//compilation modes
-byt MODE__PRE = '\x00'; //preprocessor
-byt MODE__ASM = '\x01';
-byt MODE__OBJ = '\x02';
+byt OPTION__PIC     = '\x05';
+byt OPTION__SDL     = '\x06';
 
 
 
@@ -82,7 +73,7 @@ tab* collectDependencies_includes(opt* o){
 byt zmain(tab* args) {
 
 	//opts & args
-	tab* opts = Tab__new(8UL, NULL);
+	tab* opts = Tab__new(7UL, NULL);
 	tab_opt__indexAssign(opts, OPTION__ASM, Opt__new(
 		'a', ctxt__toStr("asm"), false,
 		Tab__new_2(
@@ -117,13 +108,6 @@ byt zmain(tab* args) {
 			ctxt__toStr("Only applicable when compiling a single file.")
 		)
 	));
-	tab_opt__indexAssign(opts, OPTION__PRE, Opt__new(
-		'p', ctxt__toStr("prep"), false,
-		Tab__new_2(
-			ctxt__toStr("Only run preprocessor over given code."),
-			ctxt__toStr("Produce '.nc.p' files.")
-		)
-	));
 	tab_opt__indexAssign(opts, OPTION__PIC, Opt__new(
 		'P', ctxt__toStr("PIC"), false,
 		Tab__new_2(
@@ -134,7 +118,7 @@ byt zmain(tab* args) {
 	tab_opt__indexAssign(opts, OPTION__SDL, Opt__new(
 		's', ctxt__toStr("sdl"), false,
 		Tab__new_3(
-			ctxt__toStr("Compile into an SDL instead of an object file."),
+			ctxt__toStr("Compile into SDL libraries instead of object files."),
 			ctxt__toStr("Option '-P/--pic' is automatically enabled with it."),
 			ctxt__toStr("Produce '.sdl' files.")
 		)
@@ -142,17 +126,13 @@ byt zmain(tab* args) {
 	Arg__parse(args, opts);
 
 	//help menu
-	if(opt__enabled(tab_opt__index(opts, OPTION__HELP))) {
-		printUsage(opts);
-	}
+	if(opt__enabled(tab_opt__index(opts, OPTION__HELP))) { printUsage(opts); }
 
 	//output opt with multiple args
 	str* outputPath = NULL;
 	opt* o          = tab_opt__index(opts, OPTION__OUTPUT);
 	if(opt__enabled(o)) {
-		if(args->length > 1){
-			Err__error(ctxt__toStr("Cannot have option '-o/--output' with multiple files as input."), 1);
-		}
+		if(args->length > 1){ Err__error(ctxt__toStr("Cannot have option '-o/--output' with multiple files as input."), 1); }
 		outputPath = o->value;
 	}
 
@@ -162,20 +142,11 @@ byt zmain(tab* args) {
 	//get include dirs
 	tab* includeDirs = collectDependencies_includes(tab_opt__index(opts, OPTION__INCLUDE));
 
-	//compilation mode : OBJ (default)
-	byt mode = MODE__OBJ;
-
-	//compilation mode : ASM
-	if(opt__enabled(tab_opt__index(opts, OPTION__ASM))) { mode = MODE__ASM; }
-
-	//compilation mode : PRE
-	if(opt__enabled(tab_opt__index(opts, OPTION__PRE))) {
-		if(mode != MODE__OBJ) { Err__error(ctxt__toStr("Cannot have both '-a/--asm' and '-p/--prep'."), 1); }
-		mode = MODE__PRE;
-	}
-
 	//store PIC info
 	boo usePIC = opt__enabled(tab_opt__index(opts, OPTION__PIC));
+
+	//compilation mode : ASM / OBJ
+	boo asmOnly = opt__enabled(tab_opt__index(opts, OPTION__ASM));
 
 	//compile each file
 	for(ulng f=0UL; f < args->length; f++) {
@@ -187,26 +158,18 @@ byt zmain(tab* args) {
 		IO__print(inputPath);
 		IO__ctxt__printLF("' {");
 
-		//preprocessor
-		if(mode == MODE__PRE) {
-			if(outputPath == NULL) { outputPath = str__add(Path__name(inputPath), ctxt__toStr(".nc.p")); }
-			//str* result = preprocess(inputPath, includeDirs);
-			//IO__writeFile(outputPath, result);
-			//str__free(result);
-		}
-
-		//assembly
-		else if(mode == MODE__ASM) {
+		//compile into ASM
+		if(asmOnly) {
 			if(outputPath == NULL) { outputPath = str__add(Path__name(inputPath), ctxt__toStr(".asm")); }
-			str* result = compile(inputPath, includeDirs);
+			str* result = compileIntoASM(inputPath, includeDirs);
 			IO__writeFile(outputPath, result);
 			str__free(result);
 		}
 
-		//object (default)
+		//compile into OBJ/SDL [default]
 		else {
 			if(outputPath == NULL) { outputPath = str__add(Path__name(inputPath), ctxt__toStr(".o")); }
-			str* result = assemble(inputPath, includeDirs); //, SDLDeps, usePIC)
+			str* result = compileIntoOBJ(inputPath, includeDirs, SDLDeps, usePIC);
 			IO__writeFile(outputPath, result);
 			str__free(result);
 		}
