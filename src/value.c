@@ -1,4 +1,4 @@
-// ---------------- IMPORTATIONS ----------------
+ // ---------------- IMPORTATIONS ----------------
 
 //bases
 #include "context.c"
@@ -41,7 +41,7 @@ valueArg* Value__parseByte(Parsing__ctx* ctx) {
 
 	//debug
 	#ifdef DEBUG_AVAILABLE
-	Parsing__ctx__debug(ctx, "VALUE PARSED BYTE");
+	Parsing__ctx__debug_WITHOUT_LF(ctx, "VALUE PARSED BYTE");
 	if(Err__debug_traces) { printf("[%02x]\n", (ubyt)(result->content)); }
 	#endif
 
@@ -82,7 +82,7 @@ valueArg* Value__parseShort(Parsing__ctx* ctx) {
 
 	//debug
 	#ifdef DEBUG_AVAILABLE
-	Parsing__ctx__debug(ctx, "VALUE PARSED SHORT");
+	Parsing__ctx__debug_WITHOUT_LF(ctx, "VALUE PARSED SHORT");
 	if(Err__debug_traces) { printf("[%04x]\n", (ushr)(result->content)); }
 	#endif
 
@@ -130,7 +130,7 @@ valueArg* Value__parseInteger(Parsing__ctx* ctx) {
 
 	//debug
 	#ifdef DEBUG_AVAILABLE
-	Parsing__ctx__debug(ctx, "VALUE PARSED INTEGER");
+	Parsing__ctx__debug_WITHOUT_LF(ctx, "VALUE PARSED INTEGER");
 	if(Err__debug_traces) { printf("[%08x]\n", (uint)(result->content)); }
 	#endif
 
@@ -195,7 +195,7 @@ valueArg* Value__parseLong(Parsing__ctx* ctx) {
 
 	//debug
 	#ifdef DEBUG_AVAILABLE
-	Parsing__ctx__debug(ctx, "VALUE PARSED LONG");
+	Parsing__ctx__debug_WITHOUT_LF(ctx, "VALUE PARSED LONG");
 	if(Err__debug_traces) { printf("[%016llx]\n", (ulng)(result->content)); }
 	#endif
 
@@ -266,9 +266,11 @@ boo Value__parseName(chr c, lst* body, Parsing__ctx* ctx, boo inCall) {
 
 				//debug
 				#ifdef DEBUG_AVAILABLE
-				Parsing__ctx__debug(ctx, "\tNAME:\"");
-				IO__print((str*)(v->content));
-				IO__ctxt__printLF("\"");
+				Parsing__ctx__debug_WITHOUT_LF(ctx, "NAME IS \"");
+				if(Err__debug_traces) { //paliative for the moment. previous debug call should contain this <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+					IO__print((str*)(v->content));
+					IO__ctxt__printLF("\"");
+				}
 				#endif
 
 				//continue the right way (return)
@@ -287,9 +289,11 @@ boo Value__parseName(chr c, lst* body, Parsing__ctx* ctx, boo inCall) {
 
 				//debug
 				#ifdef DEBUG_AVAILABLE
-				Parsing__ctx__debug(ctx, "\tNAME:\"");
-				IO__print((str*)(v->content));
-				IO__ctxt__printLF("\"");
+				Parsing__ctx__debug_WITHOUT_LF(ctx, "NAME IS \"");
+				if(Err__debug_traces) { //paliative for the moment. previous debug call should contain this <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+					IO__print((str*)(v->content));
+					IO__ctxt__printLF("\"");
+				}
 				#endif
 
 				//continue parsing on the right way (parseSubcontent, return)
@@ -308,9 +312,11 @@ boo Value__parseName(chr c, lst* body, Parsing__ctx* ctx, boo inCall) {
 
 				//debug
 				#ifdef DEBUG_AVAILABLE
-				Parsing__ctx__debug(ctx, "\tNAME:\"");
-				IO__print((str*)(v->content));
-				IO__ctxt__printLF("\"");
+				Parsing__ctx__debug_WITHOUT_LF(ctx, "NAME IS \"");
+				if(Err__debug_traces) { //paliative for the moment. previous debug call should contain this <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+					IO__print((str*)(v->content));
+					IO__ctxt__printLF("\"");
+				}
 				#endif
 
 				//continue parsing on the right way (parseCall, return)

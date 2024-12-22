@@ -527,46 +527,122 @@ void dmb__flush(dmb* d) {
 // ---------------- ERRORS ----------------
 
 //definitions
-const ubyt Err__SUCCESS = '\x00';
-const ubyt Err__FAILURE = '\x01';
-str Err__DEBUG_HEADER   = { 10ULL, "[ DEBUG ] " };
-str Err__WARNN_HEADER   = { 10ULL, "[WARNING] " };
-str Err__ERROR_HEADER   = { 10ULL, "[ ERROR ] " };
+#define DEBUG_AVAILABLE
+#define INTERNAL_ERRORS
+const ubyt Err__SUCCESS  = '\x00';
+const ubyt Err__CONTINUE = Err__SUCCESS; //to be used in Err__errorLF()
+const ubyt Err__FAILURE  = '\x01';
+
+//header text
+str[] Err__HEADER = { //Err__HEADER is a tab actually
+	{ 10ULL, "[ ERROR ] " },
+	{ 10ULL, "[WARNING] " },
+	{ 10ULL, "[ INFO  ] " },
+	{ 10ULL, "[ DEBUG ] " },
+	{ 10ULL, "[       ] " },
+	{ 10ULL, "[*      ] " },
+	{ 10ULL, "[**     ] " },
+	{ 10ULL, "[***    ] " },
+	{ 10ULL, "[ ***   ] " },
+	{ 10ULL, "[  ***  ] " },
+	{ 10ULL, "[   *** ] " },
+	{ 10ULL, "[    ***] " },
+	{ 10ULL, "[     **] " },
+	{ 10ULL, "[      *] " }
+#ifdef INTERNAL_ERRORS
+	,{ 10ULL, "[INT ERR] " }
+#endif
+};
+#ifdef INTERNAL_ERRORS
+ulng Err__HEADER__length = 15ULL;
+#else
+ulng Err__HEADER__length = 14ULL;
+#endif
+
+//header indexes
+const ubyt Err__LEVEL__ERROR   = '\x00';
+const ubyt Err__LEVEL__WARNING = '\x01';
+const ubyt Err__LEVEL__INFO    = '\x02';
+const ubyt Err__LEVEL__DEBUG   = '\x03';
+const ubyt Err__LEVEL__LOAD0   = '\x04';
+const ubyt Err__LEVEL__LOAD1   = '\x05';
+const ubyt Err__LEVEL__LOAD3   = '\x06';
+const ubyt Err__LEVEL__LOAD4   = '\x07';
+const ubyt Err__LEVEL__LOAD5   = '\x08';
+const ubyt Err__LEVEL__LOAD6   = '\x09';
+const ubyt Err__LEVEL__LOAD7   = '\x0a';
+const ubyt Err__LEVEL__LOAD8   = '\x0b';
+const ubyt Err__LEVEL__LOAD9   = '\x0c';
+#ifdef INTERNAL_ERRORS
+const ubyt Err__LEVEL__INTERR  = '\x0d';
+#endif
+
+//generic output
+void Err__checkLevel(ubyt level) {
+	if(level >= Err__HEADER__length) {
+		#ifdef INTERNAL_ERRORS
+		Err__internal(ctxt__toStr("Err__checkLevel() : Invalid level given."));
+		#else
+		Syscall__exit(Err__FAILURE);
+		#endif
+	}
+}
+void Err__levelPrint(str* msg, ubyt level) {
+	Err__checkLevel(level);
+	IO__print(Err__HEADER + level);
+	IO__print(msg);
+}
+void Err__levelPrintLF(str* msg, ubyt level) {
+	Err__checkLevel(level);
+	IO__print(Err__HEADER + level);
+	IO__printLF(msg);
+}
 
 //debug
-#define DEBUG_AVAILABLE
 #ifdef DEBUG_AVAILABLE
 	boo Err__debug_traces = false;
-	void Err__debug(str* msg) {
-		if(Err__debug_traces) {
-			IO__print(&Err__DEBUG_HEADER);
-			IO__print(msg);
-		}
+	void Err__debug(str* msg)   { if(Err__debug_traces) {   Err__levelPrint(msg, Err__LEVEL__DEBUG); } }
+	void Err__debugLF(str* msg) { if(Err__debug_traces) { Err__levelPrintLF(msg, Err__LEVEL__DEBUG); } }
+
+	//<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< TEMPORARY FOR CTXT
+	void Err__ctxt__debug(chr* msg) {
+		str* s_msg = ctxt__toStr(msg);
+		Err__debug(s_msg);
+		free(s_msg);
 	}
-	void Err__ctxt__debug(chr* msg) { //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< TEMPORARY FOR CTXT
-		if(Err__debug_traces) {
-			str* s_msg = ctxt__toStr(msg);
-			Err__debug(s_msg);
-		}
-	}
-	void Err__ctxt__debugLF(chr* msg) { //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< TEMPORARY FOR CTXT
-		if(Err__debug_traces) {
-			Err__ctxt__debug(msg);
-			IO__printChr('\n');
-		}
+	void Err__ctxt__debugLF(chr* msg) {
+		str* s_msg = ctxt__toStr(msg);
+		Err__debugLF(s_msg);
+		free(s_msg);
 	}
 #endif
 
-//functions
+//warning - error
 void Err__warning(str* msg) {
-	IO__print(&Err__WARNN_HEADER);
-	IO__printLF(msg);
+	IO__print(Err__HEADER + Err__LEVEL__WARNING);
 }
-void Err__error(str* msg, ubyt err) {
+void Err__warningLF(str* msg) {
+	IO__print(Err__HEADER + Err__LEVEL__WARNING);
+}
+void Err__error(str* msg) {
+	IO__print(&Err__ERROR_HEADER);
+	IO__print(msg);
+}
+void Err__errorLF(str* msg, ubyt err) {
 	IO__print(&Err__ERROR_HEADER);
 	IO__printLF(msg);
-	Syscall__exit(err);
+	if(err != '\x00') { Syscall__exit(err); }
 }
+
+//internal errors
+#ifdef INTERNAL_ERRORS
+void Err__internal(str* msg);
+void Err__internal(str* msg) {
+	IO__print(&Err__INTERR_HEADER);
+	IO__printLF(msg);
+	Syscall__exit(Err__FAILURE);
+}
+#endif
 
 
 
@@ -611,10 +687,10 @@ void Arg__detectedOption(opt* o, tab* args, ulng* argIndex) {
 
 		//error cases
 		if(argIndex[0] >= args->length) {
-			Err__error( str__add(str__add(ctxt__toStr("Option '--"), o->long_name), ctxt__toStr("' requires a value (nothing given).")), Err__FAILURE);
+			Err__errorLF( str__add(str__add(ctxt__toStr("Option '--"), o->long_name), ctxt__toStr("' requires a value (nothing given).")), Err__FAILURE);
 		}
 		if(str__index(tab_str__index(args, argIndex[0]),0) == '-') {
-			Err__error( str__add(str__add(ctxt__toStr("Option '--"), o->long_name), ctxt__toStr("' requires a value (another option given).")), Err__FAILURE);
+			Err__errorLF( str__add(str__add(ctxt__toStr("Option '--"), o->long_name), ctxt__toStr("' requires a value (another option given).")), Err__FAILURE);
 		}
 
 		//store given value
@@ -637,7 +713,7 @@ void Arg__parse(tab* args, tab* opts) {
 		if(str__index(a,0) == '-'){
 
 			//special case: lonely '-'
-			if(a->length == 1UL) { Err__error(ctxt__toStr("Missing argument name to lonely '-'."), 1); }
+			if(a->length == 1UL) { Err__errorLF(ctxt__toStr("Missing argument name to lonely '-'."), 1); }
 			boo foundMatching = false;
 
 			//long options
@@ -673,7 +749,7 @@ void Arg__parse(tab* args, tab* opts) {
 
 			//no matching option found
 			if(!foundMatching) {
-				Err__error(
+				Err__errorLF(
 					str__add(str__add( ctxt__toStr("Undefined option '"), a), ctxt__toStr("'.\n")),
 					Err__FAILURE
 				);
@@ -792,7 +868,7 @@ boo Path__isFile(str* path) { //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 }
 void Path__errorIfNotDir(str* path, byt err) {
 	if(!Path__isDir(path)){
-		Err__error(
+		Err__errorLF(
 			str__add(str__add(ctxt__toStr("Path '"), path), ctxt__toStr("' is not a directory.")),
 			err
 		);
@@ -800,7 +876,7 @@ void Path__errorIfNotDir(str* path, byt err) {
 }
 void Path__errorIfNotFile(str* path, byt err) {
 	if(!Path__isFile(path)){
-		Err__error(
+		Err__errorLF(
 			str__add(str__add(ctxt__toStr("Path '"), path), ctxt__toStr("' is not a file.")),
 			err
 		);
@@ -822,7 +898,7 @@ ubyt chr__fromHexToUByt(chr c) {
 }
 ubyt str__toUByt(str* input) {
 	if(input->length < 2ULL) {
-		Err__error(
+		Err__errorLF(
 			str__add(str__add(ctxt__toStr("String \""), input), ctxt__toStr("\" too short to be converted into UByt (at least 2 characters required).")),
 			Err__FAILURE
 		);
@@ -833,7 +909,7 @@ ubyt str__toUByt(str* input) {
 }
 ushr str__toUShr(str* input) {
 	if(input->length < 4ULL) {
-		Err__error(
+		Err__errorLF(
 			str__add(str__add(ctxt__toStr("String \""), input), ctxt__toStr("\" too short to be converted into UShr (at least 4 characters required).")),
 			Err__FAILURE
 		);
@@ -848,7 +924,7 @@ ushr str__toUShr(str* input) {
 }
 uint str__toUInt(str* input) {
 	if(input->length < 8ULL) {
-		Err__error(
+		Err__errorLF(
 			str__add(str__add(ctxt__toStr("String \""), input), ctxt__toStr("\" too short to be converted into UInt (at least 8 characters required).")),
 			Err__FAILURE
 		);
@@ -869,7 +945,7 @@ uint str__toUInt(str* input) {
 }
 ulng str__toULng(str* input) {
 	if(input->length < 16ULL) {
-		Err__error(
+		Err__errorLF(
 			str__add(str__add(ctxt__toStr("String \""), input), ctxt__toStr("\" too short to be converted into ULng (at least 16 characters are required).")),
 			Err__FAILURE
 		);
@@ -1286,8 +1362,9 @@ Parsing__ctx* Parsing__ctx__copy(Parsing__ctx* ctx) {
 	ctx2->icontent->index = ctx->icontent->index;
 	return ctx2;
 }
-void Parsing__ctx__printLineIndicator(Parsing__ctx* ctx) {
-	IO__printLF(Parsing__ctx__toStr(ctx));
+void Parsing__ctx__printLineIndicator(Parsing__ctx* ctx, boo debug) {
+	if(debug) { Err__debugLF(Parsing__ctx__toStr(ctx)); }
+	else      {  IO__printLF(Parsing__ctx__toStr(ctx)); }
 	str* content = ctx->icontent->s;
 
 	//set beginning & end of line
@@ -1307,22 +1384,35 @@ void Parsing__ctx__printLineIndicator(Parsing__ctx* ctx) {
 
 	//print full line
 	str* concernedLine = str__sub(content, begIndex, endIndex);
-	IO__printLF(concernedLine);
+	if(debug) { Err__debug(concernedLine); }
+	else      {  IO__print(concernedLine); }
 	str__free(concernedLine);
 
-	//print position indicator
+	//prepare position indicator
 	ulng positionIndex     = ctx->columnNbr - 1LL;
 	str* positionIndicator = Str__new(ctx->columnNbr);
-	for(ulng i=0ULL; i < positionIndex; i++) { str__indexAssign(positionIndicator, i, ' '); }
+	for(ulng i=0ULL; i < positionIndex; i++) { str__indexAssign(positionIndicator, i, '-'); }
 	str__indexAssign(positionIndicator, positionIndex, '^');
-	IO__printLF(positionIndicator);
+
+	//print position indicator
+	if(debug) { Err__debugLF(positionIndicator); }
+	else      {  IO__printLF(positionIndicator); }
 	str__free(positionIndicator);
 }
 #ifdef DEBUG_AVAILABLE
-void Parsing__ctx__debug(Parsing__ctx* ctx, chr* msg){ //str* msg){ //TEMPORARY SHORTCUT FOR ALLOWING DIRECT USE OF CTXT
+void Parsing__ctx__debug(Parsing__ctx* ctx, chr* msg){ //str* msg){ //use of chr* is a tmp shortcut
 	if(Err__debug_traces) {
-		Parsing__ctx__printLineIndicator(ctx);
+		Err__ctxt__debugLF("");
+		Parsing__ctx__printLineIndicator(ctx, true);
 		Err__ctxt__debugLF(msg);
+	}
+}
+//TEMPORARY
+void Parsing__ctx__debug_WITHOUT_LF(Parsing__ctx* ctx, chr* msg){ //str* msg){ //use of chr* is a tmp shortcut
+	if(Err__debug_traces) {
+		Err__ctxt__debugLF("");
+		Parsing__ctx__printLineIndicator(ctx, true);
+		Err__ctxt__debug(msg);
 	}
 }
 #endif

@@ -97,6 +97,6 @@ void token__free(token* t) {
 
 //error during global tokenization
 void Tokenization__error(Parsing__ctx* ctx, str* s) {
-	Parsing__ctx__printLineIndicator(ctx);
+	Parsing__ctx__printLineIndicator(ctx, false);
 	Err__error(s, Err__FAILURE);
 }
