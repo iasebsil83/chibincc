@@ -140,7 +140,7 @@ byt zmain(tab* args) {
 
 	//debug
 	#ifdef DEBUG_AVAILABLE
-	if(opt__enabled(tab_opt__index(opts, OPTION__DEBUG))) { Err__debug_traces = true; }
+	if(opt__enabled(tab_opt__index(opts, OPTION__DEBUG))) { Log__level = Log__LEVEL__DEBUG; }
 	#endif
 
 	//help menu
@@ -150,7 +150,7 @@ byt zmain(tab* args) {
 	str* outputPath = NULL;
 	opt* o          = tab_opt__index(opts, OPTION__OUTPUT);
 	if(opt__enabled(o)) {
-		if(args->length > 1){ Err__error(ctxt__toStr("Cannot have option '-o/--output' with multiple files as input."), 1); }
+		if(args->length > 1){ Log__errorLF(ctxt__toStr("Cannot have option '-o/--output' with multiple files as input."), true, Err__FAILURE); }
 		outputPath = o->value;
 	}
 

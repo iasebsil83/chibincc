@@ -84,7 +84,7 @@ str* Value__toStr(valueArg* v, ulng depth) {
 		break;
 		default:
 			printf("[%02x]\n", v->id);
-			Err__error(ctxt__toStr("[INTERNAL ERROR] INVALID VALUE ID given !"), Err__FAILURE);
+			Log__errorLF(ctxt__toStr("[INTERNAL ERROR] INVALID VALUE ID given !"), true, Err__FAILURE);
 	}
 	return result;
 }

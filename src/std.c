@@ -524,22 +524,19 @@ void dmb__flush(dmb* d) {
 
 
 
-// ---------------- ERRORS ----------------
+// ---------------- ERRORS / LOGS ----------------
 
 //definitions
 #define DEBUG_AVAILABLE
 #define INTERNAL_ERRORS
 const ubyt Err__SUCCESS  = '\x00';
-const ubyt Err__CONTINUE = Err__SUCCESS; //to be used in Err__errorLF()
 const ubyt Err__FAILURE  = '\x01';
+const ubyt Err__CONTINUE = Err__SUCCESS;
 
 //header text
-str[] Err__HEADER = { //Err__HEADER is a tab actually
-	{ 10ULL, "[ ERROR ] " },
-	{ 10ULL, "[WARNING] " },
-	{ 10ULL, "[ INFO  ] " },
+str Log__HEADER[] = { //Log__HEADER is a tab actually
 	{ 10ULL, "[ DEBUG ] " },
-	{ 10ULL, "[       ] " },
+	{ 10ULL, "[       ] " }, //LOAD0
 	{ 10ULL, "[*      ] " },
 	{ 10ULL, "[**     ] " },
 	{ 10ULL, "[***    ] " },
@@ -548,100 +545,91 @@ str[] Err__HEADER = { //Err__HEADER is a tab actually
 	{ 10ULL, "[   *** ] " },
 	{ 10ULL, "[    ***] " },
 	{ 10ULL, "[     **] " },
-	{ 10ULL, "[      *] " }
+	{ 10ULL, "[      *] " }, //LOAD9
+	{ 10ULL, "[ INFO  ] " },
+	{ 10ULL, "[WARNING] " },
+	{ 10ULL, "[ ERROR ] " }
 #ifdef INTERNAL_ERRORS
 	,{ 10ULL, "[INT ERR] " }
 #endif
 };
 #ifdef INTERNAL_ERRORS
-ulng Err__HEADER__length = 15ULL;
+ulng Log__HEADER__length = 15ULL;
 #else
-ulng Err__HEADER__length = 14ULL;
+ulng Log__HEADER__length = 14ULL;
 #endif
 
-//header indexes
-const ubyt Err__LEVEL__ERROR   = '\x00';
-const ubyt Err__LEVEL__WARNING = '\x01';
-const ubyt Err__LEVEL__INFO    = '\x02';
-const ubyt Err__LEVEL__DEBUG   = '\x03';
-const ubyt Err__LEVEL__LOAD0   = '\x04';
-const ubyt Err__LEVEL__LOAD1   = '\x05';
-const ubyt Err__LEVEL__LOAD3   = '\x06';
-const ubyt Err__LEVEL__LOAD4   = '\x07';
-const ubyt Err__LEVEL__LOAD5   = '\x08';
-const ubyt Err__LEVEL__LOAD6   = '\x09';
-const ubyt Err__LEVEL__LOAD7   = '\x0a';
-const ubyt Err__LEVEL__LOAD8   = '\x0b';
-const ubyt Err__LEVEL__LOAD9   = '\x0c';
+//log level (= HEADER indexes)
+const ubyt Log__LEVEL__DEBUG   = '\x00';
+const ubyt Log__LEVEL__LOAD0   = '\x01';
+const ubyt Log__LEVEL__LOAD1   = '\x02';
+const ubyt Log__LEVEL__LOAD2   = '\x03';
+const ubyt Log__LEVEL__LOAD3   = '\x04';
+const ubyt Log__LEVEL__LOAD4   = '\x05';
+const ubyt Log__LEVEL__LOAD5   = '\x06';
+const ubyt Log__LEVEL__LOAD6   = '\x07';
+const ubyt Log__LEVEL__LOAD7   = '\x08';
+const ubyt Log__LEVEL__LOAD8   = '\x09';
+const ubyt Log__LEVEL__LOAD9   = '\x0a';
+const ubyt Log__LEVEL__INFO    = '\x0b';
+const ubyt Log__LEVEL__WARNING = '\x0c';
+const ubyt Log__LEVEL__ERROR   = '\x0d';
 #ifdef INTERNAL_ERRORS
-const ubyt Err__LEVEL__INTERR  = '\x0d';
+const ubyt Log__LEVEL__INTERR  = '\x0d';
 #endif
+const ubyt Log__LEVEL__NONE    = '\xff'; //out of range of Log__HEADER
+
+//level filtration
+ubyt Log__level = Log__LEVEL__LOAD0; //default value
+
 
 //generic output
-void Err__checkLevel(ubyt level) {
-	if(level >= Err__HEADER__length) {
-		#ifdef INTERNAL_ERRORS
-		Err__internal(ctxt__toStr("Err__checkLevel() : Invalid level given."));
-		#else
-		Syscall__exit(Err__FAILURE);
-		#endif
+void Log__print(str* msg, boo header, ubyt level) {
+	if(level < Log__HEADER__length) {
+		if(level < Log__level) { return; }
+		if(header) { IO__print(Log__HEADER + level); } //<=> Log__HEADER[level]
 	}
-}
-void Err__levelPrint(str* msg, ubyt level) {
-	Err__checkLevel(level);
-	IO__print(Err__HEADER + level);
 	IO__print(msg);
 }
-void Err__levelPrintLF(str* msg, ubyt level) {
-	Err__checkLevel(level);
-	IO__print(Err__HEADER + level);
+void Log__printLF(str* msg, boo header, ubyt level) {
+	if(level < Log__HEADER__length) {
+		if(level < Log__level) { return; }
+		if(header) { IO__print(Log__HEADER + level); }
+	}
 	IO__printLF(msg);
 }
 
-//debug
+//debug - warning - error
 #ifdef DEBUG_AVAILABLE
-	boo Err__debug_traces = false;
-	void Err__debug(str* msg)   { if(Err__debug_traces) {   Err__levelPrint(msg, Err__LEVEL__DEBUG); } }
-	void Err__debugLF(str* msg) { if(Err__debug_traces) { Err__levelPrintLF(msg, Err__LEVEL__DEBUG); } }
+	void Log__debug(str* msg, boo header)   { Log__print(  msg, header, Log__LEVEL__DEBUG); }
+	void Log__debugLF(str* msg, boo header) { Log__printLF(msg, header, Log__LEVEL__DEBUG); }
 
 	//<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< TEMPORARY FOR CTXT
-	void Err__ctxt__debug(chr* msg) {
+	void Log__ctxt__debug(chr* msg, boo header) {
 		str* s_msg = ctxt__toStr(msg);
-		Err__debug(s_msg);
+		Log__debug(s_msg, header);
 		free(s_msg);
 	}
-	void Err__ctxt__debugLF(chr* msg) {
+	void Log__ctxt__debugLF(chr* msg, boo header) {
 		str* s_msg = ctxt__toStr(msg);
-		Err__debugLF(s_msg);
+		Log__debugLF(s_msg, header);
 		free(s_msg);
 	}
 #endif
-
-//warning - error
-void Err__warning(str* msg) {
-	IO__print(Err__HEADER + Err__LEVEL__WARNING);
-}
-void Err__warningLF(str* msg) {
-	IO__print(Err__HEADER + Err__LEVEL__WARNING);
-}
-void Err__error(str* msg) {
-	IO__print(&Err__ERROR_HEADER);
-	IO__print(msg);
-}
-void Err__errorLF(str* msg, ubyt err) {
-	IO__print(&Err__ERROR_HEADER);
-	IO__printLF(msg);
-	if(err != '\x00') { Syscall__exit(err); }
+/* NOT USED YET
+void Log__info(     str* msg, boo header)           { Log__print(  msg, header, Log__LEVEL__INFO);    }
+void Log__infoLF(   str* msg, boo header)           { Log__printLF(msg, header, Log__LEVEL__INFO);    }
+void Log__warning(  str* msg, boo header)           { Log__print(  msg, header, Log__LEVEL__WARNING); }
+void Log__warningLF(str* msg, boo header)           { Log__printLF(msg, header, Log__LEVEL__WARNING); }*/
+void Log__error(    str* msg, boo header)           { Log__print(  msg, header, Log__LEVEL__ERROR);   }
+void Log__errorLF(  str* msg, boo header, ubyt err) { Log__printLF(msg, header, Log__LEVEL__ERROR);
+	if(err != Err__CONTINUE) { Syscall__exit(err); }
 }
 
 //internal errors
 #ifdef INTERNAL_ERRORS
-void Err__internal(str* msg);
-void Err__internal(str* msg) {
-	IO__print(&Err__INTERR_HEADER);
-	IO__printLF(msg);
-	Syscall__exit(Err__FAILURE);
-}
+void Log__internal(  str* msg, boo header) { Log__print(  msg, header, Log__LEVEL__INTERR); Syscall__exit(Err__FAILURE); }
+void Log__internalLF(str* msg, boo header) { Log__printLF(msg, header, Log__LEVEL__INTERR); Syscall__exit(Err__FAILURE); }
 #endif
 
 
@@ -687,10 +675,10 @@ void Arg__detectedOption(opt* o, tab* args, ulng* argIndex) {
 
 		//error cases
 		if(argIndex[0] >= args->length) {
-			Err__errorLF( str__add(str__add(ctxt__toStr("Option '--"), o->long_name), ctxt__toStr("' requires a value (nothing given).")), Err__FAILURE);
+			Log__errorLF( str__add(str__add(ctxt__toStr("Option '--"), o->long_name), ctxt__toStr("' requires a value (nothing given).")), true, Err__FAILURE);
 		}
 		if(str__index(tab_str__index(args, argIndex[0]),0) == '-') {
-			Err__errorLF( str__add(str__add(ctxt__toStr("Option '--"), o->long_name), ctxt__toStr("' requires a value (another option given).")), Err__FAILURE);
+			Log__errorLF( str__add(str__add(ctxt__toStr("Option '--"), o->long_name), ctxt__toStr("' requires a value (another option given).")), true, Err__FAILURE);
 		}
 
 		//store given value
@@ -713,7 +701,7 @@ void Arg__parse(tab* args, tab* opts) {
 		if(str__index(a,0) == '-'){
 
 			//special case: lonely '-'
-			if(a->length == 1UL) { Err__errorLF(ctxt__toStr("Missing argument name to lonely '-'."), 1); }
+			if(a->length == 1UL) { Log__errorLF(ctxt__toStr("Missing argument name to lonely '-'."), true, Err__FAILURE); }
 			boo foundMatching = false;
 
 			//long options
@@ -749,9 +737,9 @@ void Arg__parse(tab* args, tab* opts) {
 
 			//no matching option found
 			if(!foundMatching) {
-				Err__errorLF(
+				Log__errorLF(
 					str__add(str__add( ctxt__toStr("Undefined option '"), a), ctxt__toStr("'.\n")),
-					Err__FAILURE
+					true, Err__FAILURE
 				);
 			}
 		}
@@ -868,17 +856,17 @@ boo Path__isFile(str* path) { //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 }
 void Path__errorIfNotDir(str* path, byt err) {
 	if(!Path__isDir(path)){
-		Err__errorLF(
+		Log__errorLF(
 			str__add(str__add(ctxt__toStr("Path '"), path), ctxt__toStr("' is not a directory.")),
-			err
+			true, err
 		);
 	}
 }
 void Path__errorIfNotFile(str* path, byt err) {
 	if(!Path__isFile(path)){
-		Err__errorLF(
+		Log__errorLF(
 			str__add(str__add(ctxt__toStr("Path '"), path), ctxt__toStr("' is not a file.")),
-			err
+			true, err
 		);
 	}
 }
@@ -898,9 +886,9 @@ ubyt chr__fromHexToUByt(chr c) {
 }
 ubyt str__toUByt(str* input) {
 	if(input->length < 2ULL) {
-		Err__errorLF(
+		Log__errorLF(
 			str__add(str__add(ctxt__toStr("String \""), input), ctxt__toStr("\" too short to be converted into UByt (at least 2 characters required).")),
-			Err__FAILURE
+			true, Err__FAILURE
 		);
 	}
 	ubyt pow1 = chr__fromHexToUByt(str__index(input, 0ULL));
@@ -909,9 +897,9 @@ ubyt str__toUByt(str* input) {
 }
 ushr str__toUShr(str* input) {
 	if(input->length < 4ULL) {
-		Err__errorLF(
+		Log__errorLF(
 			str__add(str__add(ctxt__toStr("String \""), input), ctxt__toStr("\" too short to be converted into UShr (at least 4 characters required).")),
-			Err__FAILURE
+			true, Err__FAILURE
 		);
 	}
 	ushr pow3 = chr__fromHexToUByt(str__index(input, 0ULL));
@@ -924,9 +912,9 @@ ushr str__toUShr(str* input) {
 }
 uint str__toUInt(str* input) {
 	if(input->length < 8ULL) {
-		Err__errorLF(
+		Log__errorLF(
 			str__add(str__add(ctxt__toStr("String \""), input), ctxt__toStr("\" too short to be converted into UInt (at least 8 characters required).")),
-			Err__FAILURE
+			true, Err__FAILURE
 		);
 	}
 	uint pow7 = chr__fromHexToUByt(str__index(input, 0ULL));
@@ -945,9 +933,9 @@ uint str__toUInt(str* input) {
 }
 ulng str__toULng(str* input) {
 	if(input->length < 16ULL) {
-		Err__errorLF(
+		Log__errorLF(
 			str__add(str__add(ctxt__toStr("String \""), input), ctxt__toStr("\" too short to be converted into ULng (at least 16 characters are required).")),
-			Err__FAILURE
+			true, Err__FAILURE
 		);
 	}
 	ulng powF = chr__fromHexToUByt(str__index(input,  0ULL));
@@ -1362,9 +1350,8 @@ Parsing__ctx* Parsing__ctx__copy(Parsing__ctx* ctx) {
 	ctx2->icontent->index = ctx->icontent->index;
 	return ctx2;
 }
-void Parsing__ctx__printLineIndicator(Parsing__ctx* ctx, boo debug) {
-	if(debug) { Err__debugLF(Parsing__ctx__toStr(ctx)); }
-	else      {  IO__printLF(Parsing__ctx__toStr(ctx)); }
+void Parsing__ctx__printLineIndicator(Parsing__ctx* ctx, ubyt level) { //level='\xff' (disabled)
+	Log__printLF(Parsing__ctx__toStr(ctx), true, level);
 	str* content = ctx->icontent->s;
 
 	//set beginning & end of line
@@ -1384,8 +1371,7 @@ void Parsing__ctx__printLineIndicator(Parsing__ctx* ctx, boo debug) {
 
 	//print full line
 	str* concernedLine = str__sub(content, begIndex, endIndex);
-	if(debug) { Err__debug(concernedLine); }
-	else      {  IO__print(concernedLine); }
+	Log__print(concernedLine, true, level);
 	str__free(concernedLine);
 
 	//prepare position indicator
@@ -1395,24 +1381,19 @@ void Parsing__ctx__printLineIndicator(Parsing__ctx* ctx, boo debug) {
 	str__indexAssign(positionIndicator, positionIndex, '^');
 
 	//print position indicator
-	if(debug) { Err__debugLF(positionIndicator); }
-	else      {  IO__printLF(positionIndicator); }
+	Log__printLF(positionIndicator, true, level);
 	str__free(positionIndicator);
 }
 #ifdef DEBUG_AVAILABLE
 void Parsing__ctx__debug(Parsing__ctx* ctx, chr* msg){ //str* msg){ //use of chr* is a tmp shortcut
-	if(Err__debug_traces) {
-		Err__ctxt__debugLF("");
-		Parsing__ctx__printLineIndicator(ctx, true);
-		Err__ctxt__debugLF(msg);
-	}
+	Log__ctxt__debugLF("", true);
+	Parsing__ctx__printLineIndicator(ctx, Log__LEVEL__DEBUG);
+	Log__ctxt__debugLF(msg, true);
 }
 //TEMPORARY
 void Parsing__ctx__debug_WITHOUT_LF(Parsing__ctx* ctx, chr* msg){ //str* msg){ //use of chr* is a tmp shortcut
-	if(Err__debug_traces) {
-		Err__ctxt__debugLF("");
-		Parsing__ctx__printLineIndicator(ctx, true);
-		Err__ctxt__debug(msg);
-	}
+	Log__ctxt__debugLF("", true);
+	Parsing__ctx__printLineIndicator(ctx, Log__LEVEL__DEBUG);
+	Log__ctxt__debug(msg, true);
 }
 #endif

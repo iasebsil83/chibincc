@@ -97,6 +97,11 @@ void token__free(token* t) {
 
 //error during global tokenization
 void Tokenization__error(Parsing__ctx* ctx, str* s) {
-	Parsing__ctx__printLineIndicator(ctx, false);
-	Err__error(s, Err__FAILURE);
+	Parsing__ctx__printLineIndicator(ctx, Log__LEVEL__ERROR);
+	for(uint i=0; i < Log__HEADER__length; i++) {
+		printf("[%02x] \"", i);
+		IO__print(Log__HEADER + i);
+		printf("\"\n");
+	}
+	Log__errorLF(s, true, Err__FAILURE);
 }
