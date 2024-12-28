@@ -174,7 +174,7 @@ byt zmain(tab* args) {
 		//compile into ASM
 		if(asmOnly) {
 			if(outputPath == NULL) { outputPath = str__add(Path__name(inputPath), ctxt__toStr(".asm")); }
-			str* result = compileIntoASM(inputPath, includeDirs);
+			str* result = compileIntoASM(inputPath, includeDirs, outputPath);
 			IO__writeFile(outputPath, result);
 			str__free(result);
 		}
@@ -182,7 +182,7 @@ byt zmain(tab* args) {
 		//compile into OBJ [default]
 		else {
 			if(outputPath == NULL) { outputPath = str__add(Path__name(inputPath), ctxt__toStr(".o")); }
-			str* result = compileIntoOBJ(inputPath, includeDirs, SDLDeps, usePIC);
+			str* result = compileIntoOBJ(inputPath, includeDirs, SDLDeps, usePIC, outputPath);
 			IO__writeFile(outputPath, result);
 			str__free(result);
 		}

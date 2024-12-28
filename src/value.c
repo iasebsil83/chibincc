@@ -216,10 +216,23 @@ valueArg* Value__parseSubcontent(Parsing__ctx* ctx) {
 
 
 //call
-valueArg* Value__parseCall(Parsing__ctx* ctx) {
+valueArg* Value__parseCall(Parsing__ctx* ctx, str* name) {
+	call* c   = malloc(sizeof(call));
+	c->name   = name;
+	c->params = Value__readWholeInstructionBody(ctx, true);
+
+	//debug
+	#ifdef DEBUG_AVAILABLE
+	Parsing__ctx__debug_WITHOUT_LF(ctx, "CALL NAME IS \"");
+	//paliative for the moment. previous debug call should contain this <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+	Log__debug(name, false);
+	Log__ctxt__debugLF("\"", false);
+	#endif
+
+	//return as generic valueArg element
 	valueArg* result = malloc(sizeof(valueArg));
 	result->id       = VARG__CALL;
-	result->content  = (ulng)Value__readWholeInstructionBody(ctx, true);
+	result->content  = (ulng)c;
 	return result;
 }
 
@@ -304,20 +317,11 @@ boo Value__parseName(chr c, lst* body, Parsing__ctx* ctx, boo inCall) {
 			//start a new call
 			case '(':
 
-				//store name
-				v->content = (ulng)str__sub(name->s, 0ULL, name->index);
-				lst__append(body, (byt*)v);
-
-				//debug
-				#ifdef DEBUG_AVAILABLE
-				Parsing__ctx__debug_WITHOUT_LF(ctx, "NAME IS \"");
-				//paliative for the moment. previous debug call should contain this <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-				Log__debug((str*)(v->content), false);
-				Log__ctxt__debugLF("\"", false);
-				#endif
-
 				//continue parsing on the right way (parseCall, return)
-				lst__append(body, (byt*)Value__parseCall(ctx));
+				lst__append(
+					body,
+					(byt*)Value__parseCall(ctx, str__sub(name->s, 0ULL, name->index)) //call name given as parameter
+				);
 				inName = false; //<=> return
 			break;
 
