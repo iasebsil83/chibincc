@@ -36,7 +36,7 @@ valueArg* Value__parseByte(Parsing__ctx* ctx) {
 
 	//return as a generic valueArg element
 	valueArg* result = malloc(sizeof(valueArg));
-	result->id       = VALUE_ARG__LITERAL1;
+	result->id       = VARG__LITERAL1;
 	result->content  = (ubyt)literal;
 
 	//debug
@@ -77,7 +77,7 @@ valueArg* Value__parseShort(Parsing__ctx* ctx) {
 
 	//return as a generic valueArg element
 	valueArg* result = malloc(sizeof(valueArg));
-	result->id       = VALUE_ARG__LITERAL2;
+	result->id       = VARG__LITERAL2;
 	result->content  = (ushr)literal;
 
 	//debug
@@ -125,7 +125,7 @@ valueArg* Value__parseInteger(Parsing__ctx* ctx) {
 
 	//return as a generic valueArg element
 	valueArg* result = malloc(sizeof(valueArg));
-	result->id       = VALUE_ARG__LITERAL4;
+	result->id       = VARG__LITERAL4;
 	result->content  = (uint)literal;
 
 	//debug
@@ -190,7 +190,7 @@ valueArg* Value__parseLong(Parsing__ctx* ctx) {
 
 	//return as a generic valueArg element
 	valueArg* result = malloc(sizeof(valueArg));
-	result->id       = VALUE_ARG__LITERAL8;
+	result->id       = VARG__LITERAL8;
 	result->content  = (ulng)literal;
 
 	//debug
@@ -208,7 +208,7 @@ valueArg* Value__parseLong(Parsing__ctx* ctx) {
 //subcontent
 valueArg* Value__parseSubcontent(Parsing__ctx* ctx) {
 	valueArg* result = malloc(sizeof(valueArg));
-	result->id       = VALUE_ARG__SUBCONTENT;
+	result->id       = VARG__SUBCONTENT;
 	result->content  = (ulng)Tokenization__tokenize(ctx, true);
 	return result;
 }
@@ -218,7 +218,7 @@ valueArg* Value__parseSubcontent(Parsing__ctx* ctx) {
 //call
 valueArg* Value__parseCall(Parsing__ctx* ctx) {
 	valueArg* result = malloc(sizeof(valueArg));
-	result->id       = VALUE_ARG__CALL;
+	result->id       = VARG__CALL;
 	result->content  = (ulng)Value__readWholeInstructionBody(ctx, true);
 	return result;
 }
@@ -242,7 +242,7 @@ boo Value__parseName(chr c, lst* body, Parsing__ctx* ctx, boo inCall) {
 
 	//prepare the value container
 	valueArg* v = malloc(sizeof(valueArg));
-	v->id       = VALUE_ARG__NAME;
+	v->id       = VARG__NAME;
 
 	//read name
 	while(inName){
@@ -326,7 +326,22 @@ boo Value__parseName(chr c, lst* body, Parsing__ctx* ctx, boo inCall) {
 			//end of call
 			case ')':
 				if(!inCall) { Tokenization__error(ctx, ctxt__toStr("Can't have end-of-call outside a call.")); }
+
+				//store name
+				v->content = (ulng)str__sub(name->s, 0ULL, name->index);
+				lst__append(body, (byt*)v);
+
+				//debug
+				#ifdef DEBUG_AVAILABLE
+				Parsing__ctx__debug_WITHOUT_LF(ctx, "NAME IS \"");
+				//paliative for the moment. previous debug call should contain this <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+				Log__debug((str*)(v->content), false);
+				Log__ctxt__debugLF("\"", false);
+				#endif
+
+				//continue parsing on the right way
 				endOfInstruction = true;
+				inName           = false; //<=> return
 			break;
 
 
@@ -409,6 +424,9 @@ lst* Value__readWholeInstructionBody(Parsing__ctx* ctx, boo inCall) {
 				if(inCall) { Tokenization__error(ctx, ctxt__toStr("Subcontents are not allowed in call parameters.")); }
 				lst__append(body, (byt*)Value__parseSubcontent(ctx));
 			break;
+
+			//value separator => ignore it (allowed anywhere)
+			case ':': break;
 
 			//other (calls are not allowed here, they must be preceeded by a NAME => only in Value__parseName)
 			default:

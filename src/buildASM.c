@@ -18,7 +18,7 @@ str* Value__toStr(valueArg* v, ulng depth) {
 	str* s1;
 	for(ulng i=0; i < depth; i++){ result = str__addChrSelf(result, '\t'); }
 	switch(v->id) {
-		case '\x00': // VALUE_ARG__NAME:
+		case VARG__NAME:
 			result = str__addChrSelf(result, 'N');
 			result = str__addChrSelf(result, '"');
 			s1 = str__copy((str*)(v->content));
@@ -27,39 +27,43 @@ str* Value__toStr(valueArg* v, ulng depth) {
 			result = str__addChrSelf(result, '"');
 			return result;
 		break;
-		case '\x01': //VALUE_ARG__LITERAL1:
+		case VARG__LITERAL1:
 			result = str__addChrSelf(result, '1');
 			result = str__addChrSelf(result, '"');
 			s1 = ulng__toStr((ubyt)(v->content));
+			result = str__addSelf(result, s1);
 			str__free(s1);
 			result = str__addChrSelf(result, '"');
 			return result;
 		break;
-		case '\x02': //VALUE_ARG__LITERAL2:
+		case VARG__LITERAL2:
 			result = str__addChrSelf(result, '2');
 			result = str__addChrSelf(result, '"');
 			s1 = ulng__toStr((ushr)(v->content));
+			result = str__addSelf(result, s1);
 			str__free(s1);
 			result = str__addChrSelf(result, '"');
 			return result;
 		break;
-		case '\x03': //VALUE_ARG__LITERAL4:
+		case VARG__LITERAL4:
 			result = str__addChrSelf(result, '4');
 			result = str__addChrSelf(result, '"');
 			s1 = ulng__toStr((uint)(v->content));
+			result = str__addSelf(result, s1);
 			str__free(s1);
 			result = str__addChrSelf(result, '"');
 			return result;
 		break;
-		case '\x04': //VALUE_ARG__LITERAL8:
+		case VARG__LITERAL8:
 			result = str__addChrSelf(result, '8');
 			result = str__addChrSelf(result, '"');
 			s1 = ulng__toStr((ulng)(v->content));
+			result = str__addSelf(result, s1);
 			str__free(s1);
 			result = str__addChrSelf(result, '"');
 			return result;
 		break;
-		case '\x05': //VALUE_ARG__CALL:
+		case VARG__CALL:
 			result = str__addChrSelf(result, 'C');
 			result = str__addChrSelf(result, '(');
 			result = str__addChrSelf(result, '\n');
@@ -68,11 +72,12 @@ str* Value__toStr(valueArg* v, ulng depth) {
 				result = str__addSelf(result, s1);
 				str__free(s1);
 				result = str__addChrSelf(result, ',');
+				result = str__addChrSelf(result, '\n');
 			}
 			for(ulng i=0; i < depth; i++){ result = str__addChrSelf(result, '\t'); }
 			result = str__addChrSelf(result, ')');
 		break;
-		case '\x06': //VALUE_ARG__SUBCONTENT:
+		case VARG__SUBCONTENT:
 			result = str__addChrSelf(result, 'S');
 			result = str__addChrSelf(result, '{');
 			result = str__addChrSelf(result, '\n');
@@ -108,9 +113,46 @@ str* buildASM(lst* tokens, ulng depth) {
 		//ID
 		for(ulng i=0; i < depth; i++){ resultText = str__addChrSelf(resultText, '\t'); }
 		resultText = str__addSelf(resultText, ID_TEXT);
-		str* idStr = ulng__toStr(tok->id);
+		str* idStr = ulng__toStr((ulng)(tok->id));
 		resultText = str__addSelf(resultText, idStr);
 		str__free(idStr);
+		resultText = str__addChrSelf(resultText, ' ');
+
+		//ID decomposition
+		switch(tok->id & NC__ROLE_MASK) {
+			case NC__ROLE_EXECUTION:
+				resultText = str__addChrSelf(resultText, 'X');
+				switch(tok->id & NC__EXE_STATEMENT_MASK) {
+					case NC__EXE_STATEMENT_IF:       resultText = str__addChrSelf(resultText, 'i'); break;
+					case NC__EXE_STATEMENT_FOR:      resultText = str__addChrSelf(resultText, 'f'); break;
+					case NC__EXE_STATEMENT_WHILE:    resultText = str__addChrSelf(resultText, 'w'); break;
+					case NC__EXE_STATEMENT_SWITCH:   resultText = str__addChrSelf(resultText, 's'); break;
+					case NC__EXE_STATEMENT_BREAK:    resultText = str__addChrSelf(resultText, 'b'); break;
+					case NC__EXE_STATEMENT_CONTINUE: resultText = str__addChrSelf(resultText, 'c'); break;
+					case NC__EXE_STATEMENT_RETURN:   resultText = str__addChrSelf(resultText, 'r'); break;
+					case NC__EXE_STATEMENT_VFC:      resultText = str__addChrSelf(resultText, 'v'); break;
+					default:                         resultText = str__addChrSelf(resultText, '?'); break;
+				}
+			break;
+			case NC__ROLE_DEFINITION:
+				resultText = str__addChrSelf(resultText, 'D');
+				switch(tok->id & NC__DEF_SCOPE_MASK) {
+					case NC__DEF_SCOPE_INTERN: resultText = str__addChrSelf(resultText, 'i'); break;
+					case NC__DEF_SCOPE_EXTERN: resultText = str__addChrSelf(resultText, 'e'); break;
+					case NC__DEF_SCOPE_SHARED: resultText = str__addChrSelf(resultText, 's'); break;
+					case NC__DEF_SCOPE_LOCAL:  resultText = str__addChrSelf(resultText, 'l'); break;
+					default:                   resultText = str__addChrSelf(resultText, '?');
+				}
+				switch(tok->id & NC__DEF_SCOPE_KIND_MASK) {
+					case NC__DEF_SCOPE_KIND_COPY:      resultText = str__addChrSelf(resultText, 'c'); break;
+					case NC__DEF_SCOPE_KIND_STRUCTURE: resultText = str__addChrSelf(resultText, 's'); break;
+					case NC__DEF_SCOPE_KIND_FUNCTION:  resultText = str__addChrSelf(resultText, 'f'); break;
+					case NC__DEF_SCOPE_KIND_DATA:      resultText = str__addChrSelf(resultText, 'd'); break;
+					default:                           resultText = str__addChrSelf(resultText, '?'); break;
+				}
+			break;
+			default: resultText = str__addChrSelf(resultText, '?');
+		}
 		resultText = str__addChrSelf(resultText, '\n');
 
 		//location

@@ -83,12 +83,6 @@ token* Tokenization__newExecutionToken_VFC(Parsing__ctx* ctx) {
 	return tok;
 }
 
-token* Tokenization__newExecutionToken_Assign(Parsing__ctx* ctx) {
-	token* tok = Token__new(ctx, NC__ROLE_EXECUTION | NC__EXE_STATEMENT_ASSIGN);
-	tok->body  = Value__readWholeInstructionBody(ctx, false);
-	return tok;
-}
-
 
 
 
@@ -133,16 +127,16 @@ lst* Tokenization__tokenize(Parsing__ctx* ctx, boo inSubcontent) {
 				//2nd rank : DEF SCOPE
 				if(Parsing__ctx__inc(ctx)) { Tokenization__error(ctx, ctxt__toStr("Missing DEF SCOPE.")); }
 				c = Parsing__ctx__get(ctx);
-				scope = '\xff'; //invalid value for DEF SCOPE
+				scope = NC__DEF_SCOPE_INVALID;
 				switch(c) {
 					case 'i':
-						if(scope == '\xff') { scope = NC__DEF_SCOPE_INTERN; IO__ctxt__printLF("SCOPE i"); }
+						if(scope == NC__DEF_SCOPE_INVALID) { scope = NC__DEF_SCOPE_INTERN; }
 					case 'x':
-						if(scope == '\xff') { scope = NC__DEF_SCOPE_EXTERN; IO__ctxt__printLF("SCOPE e"); }
+						if(scope == NC__DEF_SCOPE_INVALID) { scope = NC__DEF_SCOPE_EXTERN; }
 					case 's':
-						if(scope == '\xff') { scope = NC__DEF_SCOPE_SHARED; IO__ctxt__printLF("SCOPE s"); }
+						if(scope == NC__DEF_SCOPE_INVALID) { scope = NC__DEF_SCOPE_SHARED; }
 					case 'l':
-						if(scope == '\xff') { scope = NC__DEF_SCOPE_LOCAL; IO__ctxt__printLF("SCOPE l"); }
+						if(scope == NC__DEF_SCOPE_INVALID) { scope = NC__DEF_SCOPE_LOCAL;  }
 
 						//3rd rank : DEF SCOPE KIND
 						if(Parsing__ctx__inc(ctx)) { Tokenization__error(ctx, ctxt__toStr("Missing DEF SCOPE KIND.")); }
@@ -187,7 +181,7 @@ lst* Tokenization__tokenize(Parsing__ctx* ctx, boo inSubcontent) {
 					//case '': lst__append(tokens, (byt*)Tokenization__newExecutionToken_(ctx)); break;
 					//case '': lst__append(tokens, (byt*)Tokenization__newExecutionToken_(ctx)); break;
 					//case '': lst__append(tokens, (byt*)Tokenization__newExecutionToken_(ctx)); break;
-					case 'a': lst__append(tokens, (byt*)Tokenization__newExecutionToken_Assign(  ctx)); break;
+					//case '': lst__append(tokens, (byt*)Tokenization__newExecutionToken_(ctx)); break;
 					default: Tokenization__error(ctx, ctxt__toStr("Invalid EXE STATEMENT given."));
 				}
 				#ifdef DEBUG_AVAILABLE

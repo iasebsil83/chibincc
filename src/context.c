@@ -3,14 +3,20 @@
 //standards
 #include "std.c"
 
+//calls
+typedef struct {
+	str* name;
+	lst* params; //lst[valueArg]
+} call;
+
 //values
-const byt VALUE_ARG__NAME       = '\x00';
-const byt VALUE_ARG__LITERAL1   = '\x01';
-const byt VALUE_ARG__LITERAL2   = '\x02';
-const byt VALUE_ARG__LITERAL4   = '\x03';
-const byt VALUE_ARG__LITERAL8   = '\x04';
-const byt VALUE_ARG__CALL       = '\x05';
-const byt VALUE_ARG__SUBCONTENT = '\x06';
+#define VARG__NAME       ((byt)'\x00')
+#define VARG__LITERAL1   ((byt)'\x01')
+#define VARG__LITERAL2   ((byt)'\x02')
+#define VARG__LITERAL4   ((byt)'\x03')
+#define VARG__LITERAL8   ((byt)'\x04')
+#define VARG__CALL       ((byt)'\x05')
+#define VARG__SUBCONTENT ((byt)'\x06')
 typedef struct {
 	byt  id;
 	ulng content;
@@ -19,38 +25,43 @@ typedef struct {
 
 
 //NC syntax : ROLE
-const ubyt NC__ROLE_DEFINITION = '\x00';
-const ubyt NC__ROLE_EXECUTION  = '\x80';
+#define NC__ROLE_DEFINITION ((ubyt)'\x00')
+#define NC__ROLE_EXECUTION  ((ubyt)'\x80') //C is just UNFAIR !!!!!!!!!
+#define NC__ROLE_MASK       ((ubyt)'\x80')
 
 //NC syntax : DEF SCOPE
-const ubyt NC__DEF_SCOPE_INTERN = '\x00';
-const ubyt NC__DEF_SCOPE_EXTERN = '\x40';
-const ubyt NC__DEF_SCOPE_SHARED = '\x20';
-const ubyt NC__DEF_SCOPE_LOCAL  = '\x60';
+#define NC__DEF_SCOPE_INTERN  ((ubyt)'\x00')
+#define NC__DEF_SCOPE_EXTERN  ((ubyt)'\x40')
+#define NC__DEF_SCOPE_SHARED  ((ubyt)'\x20')
+#define NC__DEF_SCOPE_LOCAL   ((ubyt)'\x60')
+#define NC__DEF_SCOPE_MASK    ((ubyt)'\x60')
+#define NC__DEF_SCOPE_INVALID ((ubyt)'\xff') //value not allowed for DEF_SCOPE
 
 //NC syntax : EXE STATEMENT
-const ubyt NC__EXE_STATEMENT_IF       = '\x00';
-const ubyt NC__EXE_STATEMENT_FOR      = '\x08';
-const ubyt NC__EXE_STATEMENT_WHILE    = '\x10';
-const ubyt NC__EXE_STATEMENT_SWITCH   = '\x18';
-const ubyt NC__EXE_STATEMENT_BREAK    = '\x20';
-const ubyt NC__EXE_STATEMENT_CONTINUE = '\x28';
-const ubyt NC__EXE_STATEMENT_RETURN   = '\x30';
-const ubyt NC__EXE_STATEMENT_VFC      = '\x38';
-const ubyt NC__EXE_STATEMENT_UNDEF1   = '\x40';
-const ubyt NC__EXE_STATEMENT_UNDEF2   = '\x48';
-const ubyt NC__EXE_STATEMENT_UNDEF3   = '\x50';
-const ubyt NC__EXE_STATEMENT_UNDEF4   = '\x58';
-const ubyt NC__EXE_STATEMENT_UNDEF5   = '\x60';
-const ubyt NC__EXE_STATEMENT_UNDEF6   = '\x68';
-const ubyt NC__EXE_STATEMENT_UNDEF7   = '\x70';
-const ubyt NC__EXE_STATEMENT_ASSIGN   = '\x78';
+#define NC__EXE_STATEMENT_IF       ((ubyt)'\x00')
+#define NC__EXE_STATEMENT_FOR      ((ubyt)'\x08')
+#define NC__EXE_STATEMENT_WHILE    ((ubyt)'\x10')
+#define NC__EXE_STATEMENT_SWITCH   ((ubyt)'\x18')
+#define NC__EXE_STATEMENT_BREAK    ((ubyt)'\x20')
+#define NC__EXE_STATEMENT_CONTINUE ((ubyt)'\x28')
+#define NC__EXE_STATEMENT_RETURN   ((ubyt)'\x30')
+#define NC__EXE_STATEMENT_VFC      ((ubyt)'\x38')
+#define NC__EXE_STATEMENT_UNDEF1   ((ubyt)'\x40')
+#define NC__EXE_STATEMENT_UNDEF2   ((ubyt)'\x48')
+#define NC__EXE_STATEMENT_UNDEF3   ((ubyt)'\x50')
+#define NC__EXE_STATEMENT_UNDEF4   ((ubyt)'\x58')
+#define NC__EXE_STATEMENT_UNDEF5   ((ubyt)'\x60')
+#define NC__EXE_STATEMENT_UNDEF6   ((ubyt)'\x68')
+#define NC__EXE_STATEMENT_UNDEF7   ((ubyt)'\x70')
+#define NC__EXE_STATEMENT_UNDEF8   ((ubyt)'\x78')
+#define NC__EXE_STATEMENT_MASK     ((ubyt)'\x78')
 
 //NC syntax : DEF SCOPE KIND
-const ubyt NC__DEF_SCOPE_KIND_COPY      = '\x00';
-const ubyt NC__DEF_SCOPE_KIND_STRUCTURE = '\x08';
-const ubyt NC__DEF_SCOPE_KIND_FUNCTION  = '\x10';
-const ubyt NC__DEF_SCOPE_KIND_DATA      = '\x18';
+#define NC__DEF_SCOPE_KIND_COPY      ((ubyt)'\x00')
+#define NC__DEF_SCOPE_KIND_STRUCTURE ((ubyt)'\x08')
+#define NC__DEF_SCOPE_KIND_FUNCTION  ((ubyt)'\x10')
+#define NC__DEF_SCOPE_KIND_DATA      ((ubyt)'\x18')
+#define NC__DEF_SCOPE_KIND_MASK      ((ubyt)'\x18')
 
 //NC syntax : LIMITS
 const ulng NC__NAME_LENGTH_MAX = 64ULL; //looks like this: abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghabcd
@@ -70,20 +81,15 @@ typedef struct {
 // ---------------- TOOLS ----------------
 
 //token
-token* Token__new(Parsing__ctx* ctx, byt id) { //DON'T INSTANCIATE BODY !
+token* Token__new(Parsing__ctx* ctx, ubyt id) { //DON'T INSTANCIATE BODY !
 	token* t = malloc(sizeof(token));
 	t->id    = id;
 	t->ctx   = Parsing__ctx__copy(ctx);
+	t->body  = NULL;
 	return t;
 }
 void token__free(token* t) {
-
-	//free value depending on what is stored inside
-	switch(t->id) {
-	}
-
-	//free other fields & the structure itself
-	lst__free(t->body, false);
+	if(t->body != NULL) { lst__free(t->body, false); }
 	Parsing__ctx__free(t->ctx);
 	free(t);
 }
@@ -98,10 +104,5 @@ void token__free(token* t) {
 //error during global tokenization
 void Tokenization__error(Parsing__ctx* ctx, str* s) {
 	Parsing__ctx__printLineIndicator(ctx, Log__LEVEL__ERROR);
-	for(uint i=0; i < Log__HEADER__length; i++) {
-		printf("[%02x] \"", i);
-		IO__print(Log__HEADER + i);
-		printf("\"\n");
-	}
 	Log__errorLF(s, true, Err__FAILURE);
 }

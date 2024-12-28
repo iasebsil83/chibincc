@@ -260,6 +260,16 @@ p Conditions are values. \
 Blocks are aggregations of a certain number of instructions so we must use openning and closing braces delimiters \m{\m and \m}\m to know when they begin and when they end. \
 Moreover, beginning from the condition to the very end, we have a succession of blocks once over 2.
 
+
+t3 FOR statement
+
+"
+EXE f <itervar_type> <itervar_name> <itervar_value> <condition> <iterexe_name> <iterexe_value> <block>
+"
+p Each field is a value, even the iteration execution. \
+As for if statements, blocks are aggregations of a certain number of instructions so we must use openning and closing braces delimiters \m{\m and \m}\m to know when they begin and when they end. \
+The iteration execution is a couple name/value that will be used in asg() call.
+
 t3 . statement
 
 "

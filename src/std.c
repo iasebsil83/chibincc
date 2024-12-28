@@ -180,14 +180,17 @@ str* Str__new(ulng length) {
 	return s;
 }
 str* ctxt__toStr(chr* data) { //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< TEMPORARY
-	str* s = malloc(sizeof(str));
-	s->data   = data;
+	str* s    = malloc(sizeof(str));
+	s->data   = NULL;
 	s->length = 0UL;
 	if(data != NULL) {
+		chr* dataInit = data;
 		while(data[0] != '\0'){
 			data++;
 			s->length++;
 		}
+		s->data = malloc(s->length);
+		for(ulng i=0; i < s->length; i++) { s->data[i] = dataInit[i]; }
 	}
 	return s;
 }
@@ -318,6 +321,23 @@ tab* str__splitByChr(str* s, chr c) {
 	}
 	return result;
 }
+str* str__expandTabs(str* s, ulng expansionLength) {
+	str* result = Str__new(s->length + (expansionLength-1LL) * str__countChr(s, '\t'));
+	ulng extendedIndex    = 0ULL;
+	for(ulng index=0ULL; index < s->length; index++) {
+		chr c = str__index(s, index);
+		if(c == '\t') {
+			for(ulng d=0ULL; d < expansionLength; d++) {
+				str__indexAssign(result, extendedIndex, ' ');
+				extendedIndex++;
+			}
+		} else {
+			str__indexAssign(result, extendedIndex, c);
+			extendedIndex++;
+		}
+	}
+	return result;
+}
 chr* str__toCtxt(str* s) {
 	chr* ctxt = malloc(s->length+1UL);
 	for(ulng i=0UL; i < s->length; i++) { ctxt[i] = str__index(s, i); }
@@ -394,6 +414,9 @@ boo istr__push(istr* i, chr value) {
 
 
 // ---------------- IO ----------------
+
+//terminal
+ulng Term__TAB_LENGTH = 8ULL;
 
 //definitions
 chr  IO__MODE_READ[]  = "r";
@@ -493,12 +516,12 @@ void IO__writeFile(str* path, str* text) {
 void IO__ctxt__print(chr* c) {
 	str* s = ctxt__toStr(c);
 	IO__print(s);
-	free(s);
+	str__free(s);
 }
 void IO__ctxt__printLF(chr* c) {
 	str* s = ctxt__toStr(c);
 	IO__printLF(s);
-	free(s);
+	str__free(s);
 }
 
 /*//dynamic memory buffer
@@ -608,12 +631,12 @@ void Log__printLF(str* msg, boo header, ubyt level) {
 	void Log__ctxt__debug(chr* msg, boo header) {
 		str* s_msg = ctxt__toStr(msg);
 		Log__debug(s_msg, header);
-		free(s_msg);
+		str__free(s_msg);
 	}
 	void Log__ctxt__debugLF(chr* msg, boo header) {
 		str* s_msg = ctxt__toStr(msg);
 		Log__debugLF(s_msg, header);
-		free(s_msg);
+		str__free(s_msg);
 	}
 #endif
 /* NOT USED YET
@@ -880,8 +903,8 @@ void Path__errorIfNotFile(str* path, byt err) {
 
 //str -> unsigned
 ubyt chr__fromHexToUByt(chr c) {
-	if(c >= '0' && c <= '9'){ return c - '0'; }
-	if(c >= 'a' && c <= 'f'){ return c - 'a'; }
+	if(c >= '0' && c <= '9'){ return c - '0';          }
+	if(c >= 'a' && c <= 'f'){ return c - 'a' + '\x0a'; }
 	return '\xff';
 }
 ubyt str__toUByt(str* input) {
@@ -1370,13 +1393,16 @@ void Parsing__ctx__printLineIndicator(Parsing__ctx* ctx, ubyt level) { //level='
 	}
 
 	//print full line
-	str* concernedLine = str__sub(content, begIndex, endIndex);
+	str* rawConcernedLine = str__sub(content, begIndex, endIndex);
+	str* concernedLine    = str__expandTabs(rawConcernedLine, Term__TAB_LENGTH);
 	Log__print(concernedLine, true, level);
 	str__free(concernedLine);
 
 	//prepare position indicator
-	ulng positionIndex     = ctx->columnNbr - 1LL;
-	str* positionIndicator = Str__new(ctx->columnNbr);
+	ulng realColumnNbr     = (Term__TAB_LENGTH-1LL)*str__countChr(rawConcernedLine, '\t') + ctx->columnNbr;
+	str__free(rawConcernedLine);
+	ulng positionIndex     =  realColumnNbr - 1LL;
+	str* positionIndicator = Str__new(realColumnNbr);
 	for(ulng i=0ULL; i < positionIndex; i++) { str__indexAssign(positionIndicator, i, '-'); }
 	str__indexAssign(positionIndicator, positionIndex, '^');
 

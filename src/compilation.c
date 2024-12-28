@@ -32,12 +32,12 @@ str* compileIntoASM(str* inputPath, tab* includeDirs) {
 
 	//tokenize its content
 	lst* tokens = Tokenization__run(inputPath, inputText);
-	free(inputText);
+	str__free(inputText);
 
 	//compile tokens into ASM
 	str* result = buildASM(tokens, 0ULL);
-	for(ulng t=0ULL; t < lst__length(tokens); t++) { token__free((token*)lst__index(tokens, t)); }
-	lst__free(tokens, false);
+	//for(ulng t=0ULL; t < lst__length(tokens); t++) { token__free((token*)lst__index(tokens, t)); } //don't free for the moment <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+	//lst__free(tokens, false);
 
 	//return result
 	return result;
