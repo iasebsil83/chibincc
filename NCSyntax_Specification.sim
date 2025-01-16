@@ -247,18 +247,18 @@ t2 Third rank : EXE STATEMENT details
 t3 IF_ statement
 
 "
-EXE i <condition> <block> [next]
+EXE i <condition> <sub> [next]
 "
 l If field "next" exists, it must be \mi\m ("else if") or \me\m (just "else") :
-- \mEXE if_<condition><block>e<else_block>\m
+- \mEXE if_<condition><sub>e<else_sub>\m
 No additionnal "next" field allowed.
 -
-- \mEXE i <condition> <block> i <condition> <else-if_block> [next]\m
+- \mEXE i <condition> <sub> i <condition> <else-if_sub> [next]\m
 Field "next" works the same as before (several chains allowed).
 -
 p Conditions are values. \
-Blocks are aggregations of a certain number of instructions so we must use openning and closing braces delimiters \m{\m and \m}\m to know when they begin and when they end. \
-Moreover, beginning from the condition to the very end, we have a succession of blocks once over 2.
+Subcontents are aggregations of a certain number of instructions so we must use openning and closing braces delimiters \m{\m and \m}\m to know when they begin and when they end. \
+Moreover, beginning from the condition to the very end, we have a succession of subs once over 2.
 
 
 t3 FOR statement

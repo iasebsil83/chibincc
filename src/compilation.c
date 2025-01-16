@@ -2,13 +2,8 @@
 
 //compilation steps
 #include "tokenization.c"
-#include "buildASM.c"
-#include "buildOBJ.c"
-
-//debug
-#ifdef DEBUG_AVAILABLE
-#include "debugTokens.c"
-#endif
+#include "asm.c"
+#include "obj.c"
 
 
 
@@ -35,29 +30,16 @@ str* compileIntoASM(str* inputPath, tab* includeDirs, str* outputPath) { //outpu
 	//read given file
 	str* inputText = IO__readFile(inputPath);
 
-	//tokenize its content
-	lst* tokens = Tokenization__run(inputPath, inputText);
+	//tokenize its content & sort them
+	Parsing__ctx* ctx = Parsing__Ctx__new(inputPath, inputText);
+	program*      p   = Program__fromCtx(ctx, outputPath); //output path for debug only
 	str__free(inputText);
 
-	//debug
-	#ifdef DEBUG_AVAILABLE
-	if(Log__level <= Log__LEVEL__DEBUG) {
-		str* ending = ctxt__toStr(".debug"); //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< to remove using constant
-		str* debugOutputPath = str__add(outputPath, ending);
-		str* debugOutput     = debugTokens(tokens, 0ULL);
-		IO__writeFile(debugOutputPath, debugOutput);
-		str__free(ending); //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< as well
-		str__free(debugOutputPath);
-		str__free(debugOutput);
-	}
-	#endif
+	//compile ordered tokens into ASM
+	str* result = ASM__build(p);
+	//program__free(p); <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< don't free for the moment
 
-	//compile tokens into ASM
-	str* result = buildASM(tokens);
-	//for(ulng t=0ULL; t < lst__length(tokens); t++) { token__free((token*)lst__index(tokens, t)); } //don't free for the moment <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-	//lst__free(tokens, false);
-
-	//return result
+	//return resulted ASM
 	return result;
 }
 
@@ -84,7 +66,9 @@ str* compileIntoOBJ(str* inputPath, tab* includeDirs, tab* SDLDeps, boo usePIC, 
 	str* asmText = compileIntoASM(inputPath, includeDirs, outputPath);
 
 	//use it now to compile into OBJ
-	str* result = buildOBJ(asmText, SDLDeps, usePIC);
+	str* result = OBJ__build(asmText, SDLDeps, usePIC);
 	str__free(asmText);
+
+	//return resulted OBJ
 	return result;
 }

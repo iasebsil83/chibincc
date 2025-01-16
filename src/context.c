@@ -3,30 +3,38 @@
 //standards
 #include "std.c"
 
-//calls
-typedef struct {
-	str* name;
-	lst* params; //lst[valueArg]
-} call;
 
-//values
-#define VARG__NAME       ((byt)'\x00')
-#define VARG__LITERAL1   ((byt)'\x01')
-#define VARG__LITERAL2   ((byt)'\x02')
-#define VARG__LITERAL4   ((byt)'\x03')
-#define VARG__LITERAL8   ((byt)'\x04')
-#define VARG__CALL       ((byt)'\x05')
-#define VARG__SUBCONTENT ((byt)'\x06')
+
+
+
+
+// VALUES
+
+//id
+#define VALUE__NAME       ((byt)'\x00')
+#define VALUE__LITERAL1   ((byt)'\x01')
+#define VALUE__LITERAL2   ((byt)'\x02')
+#define VALUE__LITERAL4   ((byt)'\x03')
+#define VALUE__LITERAL8   ((byt)'\x04')
+#define VALUE__CALL       ((byt)'\x05')
+#define VALUE__SUBCONTENT ((byt)'\x06')
+
+//specific data structures
 typedef struct {
 	byt  id;
 	ulng content;
-} valueArg;
+} value;
 
 
+
+
+
+
+// TOKENS
 
 //NC syntax : ROLE
 #define NC__ROLE_DEFINITION ((ubyt)'\x00')
-#define NC__ROLE_EXECUTION  ((ubyt)'\x80') //C is just UNFAIR !!!!!!!!!
+#define NC__ROLE_EXECUTION  ((ubyt)'\x80')
 #define NC__ROLE_MASK       ((ubyt)'\x80')
 
 //NC syntax : DEF SCOPE
@@ -66,12 +74,75 @@ typedef struct {
 //NC syntax : LIMITS
 const ulng NC__NAME_LENGTH_MAX = 64ULL; //looks like this: abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghabcd
 
-//tokens
+//data
+typedef struct {
+	str* type;
+	str* name;
+	ulng value;
+	boo  global;
+	ulng offset; //for ASM generation
+} dataItem;
+typedef struct {
+	str* type;
+	str* name;
+} dataDcl;
+
+//global data structures
+typedef struct {
+	str* name;
+	lst* params; //lst[value]
+} call;
 typedef struct {
 	ubyt          id;
-	lst*          body; //lst[valueArg]
+	ulng          content; //variable type
 	Parsing__ctx* ctx;
 } token;
+
+//specific data structures
+typedef struct {
+	value* condition;
+	lst*   block;      //lst[token]
+	lst*   elifBlocks; //lst[lst[token]], can be empty
+	lst*   elseBlock;  //lst[token], can be NULL
+} Xif;
+typedef struct {
+	dataItem* iterVar;
+	value*    iterVarInitValue;
+	value*    iterCondition;
+	value*    iterOperation;
+	lst*      block; //lst[token]
+} Xfor;
+typedef struct {
+	value* condition;
+	value* block;
+} Xwhile;
+typedef struct {
+	value* condition;
+	lst*   keys;   //lst[value]
+	lst*   blocks; //lst[value]
+} Xswitch;
+typedef struct {
+	str* srcType;
+	str* name;
+} Dcpy;
+typedef struct {
+	str* name;
+	lst* fields; //lst[dataDcl]
+} Dstc;
+typedef struct {
+	str* name;
+	str* returnType;
+	lst* params; //lst[dataDcl]
+} Dfunction;
+
+//program
+typedef struct {
+	lst* cpyTypes;  //lst[Dcpy]
+	lst* stcTypes;  //lst[Dstc]
+	lst* globalDat; //lst[dataItem]
+	lst* globalAsg; //lst[call]
+	lst* functions; //lst[Dfunction]
+} program;
 
 
 
@@ -92,17 +163,4 @@ void token__free(token* t) {
 	if(t->body != NULL) { lst__free(t->body, false); }
 	Parsing__ctx__free(t->ctx);
 	free(t);
-}
-
-
-
-
-
-
-// ---------------- GENERIC ----------------
-
-//error during global tokenization
-void Tokenization__error(Parsing__ctx* ctx, str* s) {
-	Parsing__ctx__printLineIndicator(ctx, Log__LEVEL__ERROR);
-	Log__errorLF(s, true, Err__FAILURE);
 }

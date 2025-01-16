@@ -15,7 +15,7 @@ lst* Tokenization__tokenize(         Parsing__ctx* ctx, boo inSubContent);
 lst* Value__readWholeInstructionBody(Parsing__ctx* ctx, boo inCall      );
 
 //numbers
-void Value__parseByte_error(Parsing__ctx* ctx){ Tokenization__error(ctx, ctxt__toStr("Not enough character to parse ubyt (2 hex required after '1' delimiter).")); }
+void Value__parseByte_error(Parsing__ctx* ctx){ Parsing__ctx__errorLF(ctx, ctxt__toStr("Not enough character to parse ubyt (2 hex required after '1' delimiter).")); }
 valueArg* Value__parseByte(Parsing__ctx* ctx) {
 	str* expectedStr = Str__new(2ULL);
 
@@ -52,7 +52,7 @@ valueArg* Value__parseByte(Parsing__ctx* ctx) {
 
 
 //short
-void Value__parseShort_error(Parsing__ctx* ctx){ Tokenization__error(ctx, ctxt__toStr("Not enough character to parse ushr (4 hex required after '2' delimiter).")); }
+void Value__parseShort_error(Parsing__ctx* ctx){ Parsing__ctx__errorLF(ctx, ctxt__toStr("Not enough character to parse ushr (4 hex required after '2' delimiter).")); }
 valueArg* Value__parseShort(Parsing__ctx* ctx) {
 	str* expectedStr = Str__new(4ULL);
 
@@ -93,7 +93,7 @@ valueArg* Value__parseShort(Parsing__ctx* ctx) {
 
 
 //integer
-void Value__parseInteger_error(Parsing__ctx* ctx){ Tokenization__error(ctx, ctxt__toStr("Not enough character to parse uint (8 hex required after '4' delimiter).")); }
+void Value__parseInteger_error(Parsing__ctx* ctx){ Parsing__ctx__errorLF(ctx, ctxt__toStr("Not enough character to parse uint (8 hex required after '4' delimiter).")); }
 valueArg* Value__parseInteger(Parsing__ctx* ctx) {
 	str* expectedStr = Str__new(8ULL);
 
@@ -141,7 +141,7 @@ valueArg* Value__parseInteger(Parsing__ctx* ctx) {
 
 
 //long
-void Value__parseLong_error(Parsing__ctx* ctx){ Tokenization__error(ctx, ctxt__toStr("Not enough character to parse ulng (16 hex required after '8' delimiter).")); }
+void Value__parseLong_error(Parsing__ctx* ctx){ Parsing__ctx__errorLF(ctx, ctxt__toStr("Not enough character to parse ulng (16 hex required after '8' delimiter).")); }
 valueArg* Value__parseLong(Parsing__ctx* ctx) {
 	str* expectedStr = Str__new(16ULL);
 
@@ -293,7 +293,7 @@ boo Value__parseName(chr c, lst* body, Parsing__ctx* ctx, boo inCall) {
 
 			//start a new subcontent
 			case '{':
-				if(inCall) { Tokenization__error(ctx, ctxt__toStr("Subcontents are not allowed in call parameters.")); }
+				if(inCall) { Parsing__ctx__errorLF(ctx, ctxt__toStr("Subcontents are not allowed in call parameters.")); }
 
 				//store name
 				v->content = (ulng)str__sub(name->s, 0ULL, name->index);
@@ -329,7 +329,7 @@ boo Value__parseName(chr c, lst* body, Parsing__ctx* ctx, boo inCall) {
 
 			//end of call
 			case ')':
-				if(!inCall) { Tokenization__error(ctx, ctxt__toStr("Can't have end-of-call outside a call.")); }
+				if(!inCall) { Parsing__ctx__errorLF(ctx, ctxt__toStr("Can't have end-of-call outside a call.")); }
 
 				//store name
 				v->content = (ulng)str__sub(name->s, 0ULL, name->index);
@@ -353,10 +353,10 @@ boo Value__parseName(chr c, lst* body, Parsing__ctx* ctx, boo inCall) {
 			//no delimiter => regular part of the name
 			default:
 				if((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_' || c == '.' || c == '*') { //NAMEs charset
-					if(maxLengthReached) { Tokenization__error(ctx, ctxt__toStr("Too much characters in NAME.")); }
+					if(maxLengthReached) { Parsing__ctx__errorLF(ctx, ctxt__toStr("Too much characters in NAME.")); }
 					if(istr__push(name, c)) { maxLengthReached = true; }
 				}
-				else { Tokenization__error(ctx, ctxt__toStr("Unauthorized middle character in NAME.")); }
+				else { Parsing__ctx__errorLF(ctx, ctxt__toStr("Unauthorized middle character in NAME.")); }
 		}
 	}
 
@@ -419,13 +419,13 @@ lst* Value__readWholeInstructionBody(Parsing__ctx* ctx, boo inCall) {
 
 			//end of call
 			case ')':
-				if(!inCall) { Tokenization__error(ctx, ctxt__toStr("Can't have end-of-call outside a call.")); }
+				if(!inCall) { Parsing__ctx__errorLF(ctx, ctxt__toStr("Can't have end-of-call outside a call.")); }
 				remaining = false;
 			break;
 
 			//subcontent
 			case '{':
-				if(inCall) { Tokenization__error(ctx, ctxt__toStr("Subcontents are not allowed in call parameters.")); }
+				if(inCall) { Parsing__ctx__errorLF(ctx, ctxt__toStr("Subcontents are not allowed in call parameters.")); }
 				lst__append(body, (byt*)Value__parseSubcontent(ctx));
 			break;
 
@@ -441,7 +441,7 @@ lst* Value__readWholeInstructionBody(Parsing__ctx* ctx, boo inCall) {
 				}
 
 				//unauthorized beginning character
-				else { Tokenization__error(ctx, ctxt__toStr("Unauthorized beginning character in instruction value.")); }
+				else { Parsing__ctx__errorLF(ctx, ctxt__toStr("Unauthorized beginning character in instruction value.")); }
 		}
 	}
 

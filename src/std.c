@@ -209,6 +209,9 @@ str* str__copy(str* s) {
 	for(ulng i=0ULL; i < s->length; i++) { str__indexAssign(s2, i, str__index(s, i)); }
 	return s2;
 }
+void str__fill(str* s, chr c) {
+	for(ulng i=0; i < s->length; i++) { str__indexAssign(s, i, c); }
+}
 str* str__sub(str* s, ulng firstIndex, ulng lastIndex) {
 	if(lastIndex == (ulng)-1L) {
 		lastIndex = s->length - 1UL;
@@ -552,6 +555,7 @@ void dmb__flush(dmb* d) {
 //definitions
 #define DEBUG_AVAILABLE
 #define INTERNAL_ERRORS
+#define LOG_FILEPATH
 const ubyt Err__SUCCESS  = '\x00';
 const ubyt Err__FAILURE  = '\x01';
 const ubyt Err__CONTINUE = Err__SUCCESS;
@@ -605,54 +609,65 @@ const ubyt Log__LEVEL__NONE    = '\xff'; //out of range of Log__HEADER
 //level filtration
 ubyt Log__level = Log__LEVEL__LOAD0; //default value
 
-
 //generic output
-void Log__print(str* msg, boo header, ubyt level) {
+void Log__print(str* msg, boo header, str* filename, ubyt level) {
 	if(level < Log__HEADER__length) {
 		if(level < Log__level) { return; }
 		if(header) { IO__print(Log__HEADER + level); } //<=> Log__HEADER[level]
 	}
+	#ifdef LOG_FILENAME
+	IO__print(filename);
+	str* separator = ctxt__toStr(": ");
+	IO__print(separator);
+	str__free(separator);
+	#endif
 	IO__print(msg);
 }
-void Log__printLF(str* msg, boo header, ubyt level) {
+void Log__printLF(str* msg, boo header, str* filename, ubyt level) {
 	if(level < Log__HEADER__length) {
 		if(level < Log__level) { return; }
 		if(header) { IO__print(Log__HEADER + level); }
 	}
+	#ifdef LOG_FILENAME
+	IO__print(filename);
+	str* separator = ctxt__toStr(": ");
+	IO__print(separator);
+	str__free(separator);
+	#endif
 	IO__printLF(msg);
 }
 
 //debug - warning - error
 #ifdef DEBUG_AVAILABLE
-	void Log__debug(str* msg, boo header)   { Log__print(  msg, header, Log__LEVEL__DEBUG); }
-	void Log__debugLF(str* msg, boo header) { Log__printLF(msg, header, Log__LEVEL__DEBUG); }
+	void Log__debug(str* msg, boo header, str* filename)   { Log__print(  msg, header, filename, Log__LEVEL__DEBUG); }
+	void Log__debugLF(str* msg, boo header, str* filename) { Log__printLF(msg, header, filename, Log__LEVEL__DEBUG); }
 
 	//<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< TEMPORARY FOR CTXT
-	void Log__ctxt__debug(chr* msg, boo header) {
+	void Log__ctxt__debug(chr* msg, boo header, str* filename) {
 		str* s_msg = ctxt__toStr(msg);
-		Log__debug(s_msg, header);
+		Log__debug(s_msg, header, filename);
 		str__free(s_msg);
 	}
-	void Log__ctxt__debugLF(chr* msg, boo header) {
+	void Log__ctxt__debugLF(chr* msg, boo header, str* filename) {
 		str* s_msg = ctxt__toStr(msg);
-		Log__debugLF(s_msg, header);
+		Log__debugLF(s_msg, header, filename);
 		str__free(s_msg);
 	}
 #endif
 /* NOT USED YET
-void Log__info(     str* msg, boo header)           { Log__print(  msg, header, Log__LEVEL__INFO);    }
-void Log__infoLF(   str* msg, boo header)           { Log__printLF(msg, header, Log__LEVEL__INFO);    }
-void Log__warning(  str* msg, boo header)           { Log__print(  msg, header, Log__LEVEL__WARNING); }
-void Log__warningLF(str* msg, boo header)           { Log__printLF(msg, header, Log__LEVEL__WARNING); }*/
-void Log__error(    str* msg, boo header)           { Log__print(  msg, header, Log__LEVEL__ERROR);   }
-void Log__errorLF(  str* msg, boo header, ubyt err) { Log__printLF(msg, header, Log__LEVEL__ERROR);
+void Log__info(     str* msg, boo header, str* filename)           { Log__print(  msg, header, filename, Log__LEVEL__INFO);    }
+void Log__infoLF(   str* msg, boo header, str* filename)           { Log__printLF(msg, header, filename, Log__LEVEL__INFO);    }
+void Log__warning(  str* msg, boo header, str* filename)           { Log__print(  msg, header, filename, Log__LEVEL__WARNING); }
+void Log__warningLF(str* msg, boo header, str* filename)           { Log__printLF(msg, header, filename, Log__LEVEL__WARNING); }*/
+void Log__error(    str* msg, boo header, str* filename)           { Log__print(  msg, header, filename, Log__LEVEL__ERROR);   }
+void Log__errorLF(  str* msg, boo header, str* filename, ubyt err) { Log__printLF(msg, header, filename, Log__LEVEL__ERROR);
 	if(err != Err__CONTINUE) { Syscall__exit(err); }
 }
 
 //internal errors
 #ifdef INTERNAL_ERRORS
-void Log__internal(  str* msg, boo header) { Log__print(  msg, header, Log__LEVEL__INTERR); Syscall__exit(Err__FAILURE); }
-void Log__internalLF(str* msg, boo header) { Log__printLF(msg, header, Log__LEVEL__INTERR); Syscall__exit(Err__FAILURE); }
+void Log__internal(  str* msg, boo header, str* filename) { Log__print(  msg, header, filename, Log__LEVEL__INTERR); Syscall__exit(Err__FAILURE); }
+void Log__internalLF(str* msg, boo header, str* filename) { Log__printLF(msg, header, filename, Log__LEVEL__INTERR); Syscall__exit(Err__FAILURE); }
 #endif
 
 
@@ -698,10 +713,16 @@ void Arg__detectedOption(opt* o, tab* args, ulng* argIndex) {
 
 		//error cases
 		if(argIndex[0] >= args->length) {
-			Log__errorLF( str__add(str__add(ctxt__toStr("Option '--"), o->long_name), ctxt__toStr("' requires a value (nothing given).")), true, Err__FAILURE);
+			Log__errorLF(
+				str__add(str__add(ctxt__toStr("Option '--"), o->long_name), ctxt__toStr("' requires a value (nothing given).")),
+				true, __FILENAME__, Err__FAILURE
+			);
 		}
 		if(str__index(tab_str__index(args, argIndex[0]),0) == '-') {
-			Log__errorLF( str__add(str__add(ctxt__toStr("Option '--"), o->long_name), ctxt__toStr("' requires a value (another option given).")), true, Err__FAILURE);
+			Log__errorLF(
+				str__add(str__add(ctxt__toStr("Option '--"), o->long_name), ctxt__toStr("' requires a value (another option given).")),
+				true, __FILENAME__, Err__FAILURE
+			);
 		}
 
 		//store given value
@@ -724,7 +745,7 @@ void Arg__parse(tab* args, tab* opts) {
 		if(str__index(a,0) == '-'){
 
 			//special case: lonely '-'
-			if(a->length == 1UL) { Log__errorLF(ctxt__toStr("Missing argument name to lonely '-'."), true, Err__FAILURE); }
+			if(a->length == 1UL) { Log__errorLF(ctxt__toStr("Missing argument name to lonely '-'."), true, __FILENAME__, Err__FAILURE); }
 			boo foundMatching = false;
 
 			//long options
@@ -762,7 +783,7 @@ void Arg__parse(tab* args, tab* opts) {
 			if(!foundMatching) {
 				Log__errorLF(
 					str__add(str__add( ctxt__toStr("Undefined option '"), a), ctxt__toStr("'.\n")),
-					true, Err__FAILURE
+					true, __FILENAME__, Err__FAILURE
 				);
 			}
 		}
@@ -881,7 +902,7 @@ void Path__errorIfNotDir(str* path, byt err) {
 	if(!Path__isDir(path)){
 		Log__errorLF(
 			str__add(str__add(ctxt__toStr("Path '"), path), ctxt__toStr("' is not a directory.")),
-			true, err
+			true, __FILENAME__, err
 		);
 	}
 }
@@ -889,7 +910,7 @@ void Path__errorIfNotFile(str* path, byt err) {
 	if(!Path__isFile(path)){
 		Log__errorLF(
 			str__add(str__add(ctxt__toStr("Path '"), path), ctxt__toStr("' is not a file.")),
-			true, err
+			true, __FILENAME__, err
 		);
 	}
 }
@@ -911,7 +932,7 @@ ubyt str__toUByt(str* input) {
 	if(input->length < 2ULL) {
 		Log__errorLF(
 			str__add(str__add(ctxt__toStr("String \""), input), ctxt__toStr("\" too short to be converted into UByt (at least 2 characters required).")),
-			true, Err__FAILURE
+			true, __FILENAME__, Err__FAILURE
 		);
 	}
 	ubyt pow1 = chr__fromHexToUByt(str__index(input, 0ULL));
@@ -922,7 +943,7 @@ ushr str__toUShr(str* input) {
 	if(input->length < 4ULL) {
 		Log__errorLF(
 			str__add(str__add(ctxt__toStr("String \""), input), ctxt__toStr("\" too short to be converted into UShr (at least 4 characters required).")),
-			true, Err__FAILURE
+			true, __FILENAME__, Err__FAILURE
 		);
 	}
 	ushr pow3 = chr__fromHexToUByt(str__index(input, 0ULL));
@@ -937,7 +958,7 @@ uint str__toUInt(str* input) {
 	if(input->length < 8ULL) {
 		Log__errorLF(
 			str__add(str__add(ctxt__toStr("String \""), input), ctxt__toStr("\" too short to be converted into UInt (at least 8 characters required).")),
-			true, Err__FAILURE
+			true, __FILENAME__, Err__FAILURE
 		);
 	}
 	uint pow7 = chr__fromHexToUByt(str__index(input, 0ULL));
@@ -958,7 +979,7 @@ ulng str__toULng(str* input) {
 	if(input->length < 16ULL) {
 		Log__errorLF(
 			str__add(str__add(ctxt__toStr("String \""), input), ctxt__toStr("\" too short to be converted into ULng (at least 16 characters are required).")),
-			true, Err__FAILURE
+			true, __FILENAME__, Err__FAILURE
 		);
 	}
 	ulng powF = chr__fromHexToUByt(str__index(input,  0ULL));
@@ -993,7 +1014,184 @@ chr ubyt__lastHexDigit(ubyt u) {
 	if(u < '\x0a') { return '0' + u; }
 	return 'a' + u - '\x0a';
 }
-str* ulng__toStr(ulng u) {
+
+
+
+
+
+
+// ---------------- PARSING ----------------
+
+//location
+typedef struct {
+	str*  filename;
+	ulng  lineNbr;
+	ulng  columnNbr;
+	istr* icontent;
+	boo   detectedLF;
+} Parsing__ctx;
+Parsing__ctx* Parsing__Ctx__new(str* filename, str* content) {
+	Parsing__ctx* ctx = malloc(sizeof(Parsing__ctx));
+	ctx->filename   = filename;
+	ctx->lineNbr    = 1ULL;
+	ctx->columnNbr  = 1ULL;
+	ctx->icontent   = IStr__fromStr(content);
+	ctx->detectedLF = false;
+	return ctx;
+}
+chr Parsing__ctx__get(Parsing__ctx* ctx) { return istr__get(ctx->icontent); }
+//void Parsing__ctx__set(Parsing__ctx* ctx, chr value) { istr__set(cxt->content, value); } //not used yet
+boo Parsing__ctx__inc(Parsing__ctx* ctx) {
+	if(istr__inc(ctx->icontent)) { return true; } //can't go further => can't go further
+
+	//last character was a line feed => update line indicators
+	if(ctx->detectedLF) { ctx->detectedLF = false; ctx->lineNbr++; ctx->columnNbr = 0ULL; }
+
+	//LF behavior
+	if(istr__get(ctx->icontent) == '\n') { ctx->detectedLF = true; }
+
+	//regular behavior
+	ctx->columnNbr++;
+	return false;
+}
+void Parsing__ctx__free(Parsing__ctx* ctx) {
+	istr__free(ctx->icontent, false);
+	free(ctx);
+}
+str* Parsing__ctx__toStr(Parsing__ctx* ctx) {
+	str* resultStr = str__addChr(ctx->filename, ':');
+
+	//lineNbr
+	str* lineNbrStr = ulng__toStr(ctx->lineNbr);
+	resultStr = str__addSelf(resultStr, lineNbrStr);
+	str__free(lineNbrStr);
+	resultStr = str__addChrSelf(resultStr, ':');
+
+	//columnNbr
+	str* columnNbrStr = ulng__toStr(ctx->columnNbr);
+	resultStr         = str__addSelf(resultStr, columnNbrStr);
+	str__free(columnNbrStr);
+	return resultStr;
+}
+Parsing__ctx* Parsing__ctx__copy(Parsing__ctx* ctx) {
+	Parsing__ctx* ctx2    = Parsing__Ctx__new(ctx->filename, ctx->icontent->s);
+	ctx2->lineNbr         = ctx->lineNbr;
+	ctx2->columnNbr       = ctx->columnNbr;
+	ctx2->icontent->index = ctx->icontent->index;
+	return ctx2;
+}
+void Parsing__ctx__printLineIndicator(Parsing__ctx* ctx, ubyt level) { //level='\xff' (disabled)
+	Log__printLF(Parsing__ctx__toStr(ctx), true, __FILENAME__, level);
+	str* content = ctx->icontent->s;
+
+	//set beginning & end of line
+	ulng begIndex, endIndex;
+	if(ctx->icontent->index == -1LL){ begIndex = 0ULL; endIndex = 0ULL; } //invalid value (istr starting index)
+	else {
+		begIndex = ctx->icontent->index - (ctx->columnNbr-1LL);
+		endIndex = ctx->icontent->index;
+	}
+	if(begIndex > endIndex) { begIndex = 0ULL; } //that mean we are in the first line (cannot subtract columnNbr)
+
+	//read to get real end of line
+	while(endIndex < content->length){
+		if(str__index(content, endIndex) == '\n') { break; }
+		endIndex++;
+	}
+
+	//print full line
+	str* rawConcernedLine = str__sub(content, begIndex, endIndex);
+	str* concernedLine    = str__expandTabs(rawConcernedLine, Term__TAB_LENGTH);
+	Log__print(concernedLine, true, __FILENAME__, level);
+	str__free(concernedLine);
+
+	//prepare position indicator
+	ulng realColumnNbr     = (Term__TAB_LENGTH-1LL)*str__countChr(rawConcernedLine, '\t') + ctx->columnNbr;
+	str__free(rawConcernedLine);
+	ulng positionIndex     =  realColumnNbr - 1LL;
+	str* positionIndicator = Str__new(realColumnNbr);
+	for(ulng i=0ULL; i < positionIndex; i++) { str__indexAssign(positionIndicator, i, '-'); }
+	str__indexAssign(positionIndicator, positionIndex, '^');
+
+	//print position indicator
+	Log__printLF(positionIndicator, true, __FILENAME__, level);
+	str__free(positionIndicator);
+}
+#ifdef DEBUG_AVAILABLE
+void Parsing__ctx__debug(Parsing__ctx* ctx, chr* msg){ //str* msg){ //use of chr* is a tmp shortcut
+	Log__ctxt__debugLF("", true, __FILENAME__);
+	Parsing__ctx__printLineIndicator(ctx, Log__LEVEL__DEBUG);
+	Log__ctxt__debugLF(msg, true, __FILENAME__);
+}
+//TEMPORARY <<<<<<<<<<<<<<<<<<<<<<<
+void Parsing__ctx__debug_WITHOUT_LF(Parsing__ctx* ctx, chr* msg){ //str* msg){ //use of chr* is a tmp shortcut
+	Log__ctxt__debugLF("", true, __FILENAME__);
+	Parsing__ctx__printLineIndicator(ctx, Log__LEVEL__DEBUG);
+	Log__ctxt__debug(msg, true);
+}//<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+#endif
+void Parsing__ctx__errorLF(Parsing__ctx* ctx, str* s) {
+	Parsing__ctx__printLineIndicator(ctx, Log__LEVEL__ERROR);
+	Log__errorLF(s, true, __FILENAME__, Err__FAILURE);
+}
+void Parsing__ctx__internalLF(Parsing__ctx* ctx, str* s) {
+	Parsing__ctx__printLineIndicator(ctx, Log__LEVEL__INTERR);
+	Log__internalLF(s, true, __FILENAME__);
+}
+
+
+
+
+
+
+// ---------------- GENERATED AT COMPILE TIME ----------------
+
+//atom structure
+typedef struct {
+	ubyt  id;
+	ubyt* data;
+} atm;
+
+//atom constants
+const uint ATOM__byt          =  0;
+const uint ATOM__shr          =  1;
+const uint ATOM__int          =  2;
+const uint ATOM__lng          =  3;
+const uint ATOM__ubyt         =  4;
+const uint ATOM__ushr         =  5;
+const uint ATOM__uint         =  6;
+const uint ATOM__ulng         =  7;
+const uint ATOM__flt          =  8;
+const uint ATOM__dbl          =  9;
+const uint ATOM__boo          = 10;
+const uint ATOM__ptr          = 11;
+const uint ATOM__tab          = 12;
+const uint ATOM__lst_item     = 13;
+const uint ATOM__lst          = 14;
+const uint ATOM__str          = 15;
+const uint ATOM__istr         = 16;
+const uint ATOM__IO__file     = 17;
+const uint ATOM__opt          = 18;
+const uint ATOM__Parsing__ctx = 19;
+const uint ATOM__atm          = -1;
+
+
+
+//atom functions
+atm* chr.toAtm(chr c) {
+}
+
+
+//toStr
+// This part is not obvious, here are some rules/principles to know about toStr method generation :
+//   - A compilation option enables or not those method generation.
+//     An additionnal precompiler option can also be set to have specific behavior in sources depending on whether we have those methods or not, but this is completely optionnal.
+//   - Types declared via type-copy does NOT generate a toStr() method (=> only root primitive + structure declared concerned)
+//   - A second parameter "ulng depth=0xff..." (-1LL) is set in every method (as for every block, the compiler will get rid of unused parameters at compile time).
+//   - These generated methods are overridable (if user defines one, it is used as is instead of generated).
+#define GENERATE_TOSTR
+#ifdef  GENERATE_TOSTR
+str* ulng__toStr(ulng e) {
 	str* result;
 
 	//separate digits
@@ -1309,117 +1507,95 @@ str* ulng__toStr(ulng u) {
 	}
 	return result;
 }
-
-
-
-
-// ---------------- PARSING ----------------
-
-//location
-typedef struct {
-	str*  filename;
-	ulng  lineNbr;
-	ulng  columnNbr;
-	istr* icontent;
-	boo   detectedLF;
-} Parsing__ctx;
-Parsing__ctx* Parsing__Ctx__new(str* filename, str* content) {
-	Parsing__ctx* ctx = malloc(sizeof(Parsing__ctx));
-	ctx->filename   = filename;
-	ctx->lineNbr    = 1ULL;
-	ctx->columnNbr  = 1ULL;
-	ctx->icontent   = IStr__fromStr(content);
-	ctx->detectedLF = false;
-	return ctx;
+str* byt__toStr(byt e) {
+	return ulng__toStr(e); //shortcut for here, but it must be defined completely in final version
 }
-chr Parsing__ctx__get(Parsing__ctx* ctx) { return istr__get(ctx->icontent); }
-//void Parsing__ctx__set(Parsing__ctx* ctx, chr value) { istr__set(cxt->content, value); } //not used yet
-boo Parsing__ctx__inc(Parsing__ctx* ctx) {
-	if(istr__inc(ctx->icontent)) { return true; } //can't go further => can't go further
-
-	//last character was a line feed => update line indicators
-	if(ctx->detectedLF) { ctx->detectedLF = false; ctx->lineNbr++; ctx->columnNbr = 0ULL; }
-
-	//LF behavior
-	if(istr__get(ctx->icontent) == '\n') { ctx->detectedLF = true; }
-
-	//regular behavior
-	ctx->columnNbr++;
-	return false;
+str* shr__toStr(shr e) {
+	return ulng__toStr(e); //shortcut for here, but it must be defined completely in final version
 }
-void Parsing__ctx__free(Parsing__ctx* ctx) {
-	istr__free(ctx->icontent, false);
-	free(ctx);
+str* int__toStr(int e) {
+	return ulng__toStr(e); //shortcut for here, but it must be defined completely in final version
 }
-str* Parsing__ctx__toStr(Parsing__ctx* ctx) {
-	str* resultStr = str__addChr(ctx->filename, ':');
-
-	//lineNbr
-	str* lineNbrStr = ulng__toStr(ctx->lineNbr);
-	resultStr = str__addSelf(resultStr, lineNbrStr);
-	str__free(lineNbrStr);
-	resultStr = str__addChrSelf(resultStr, ':');
-
-	//columnNbr
-	str* columnNbrStr = ulng__toStr(ctx->columnNbr);
-	resultStr         = str__addSelf(resultStr, columnNbrStr);
-	str__free(columnNbrStr);
-	return resultStr;
+str* lng__toStr(lng e) {
+	return ulng__toStr(e); //shortcut for here, but it must be defined completely in final version
 }
-Parsing__ctx* Parsing__ctx__copy(Parsing__ctx* ctx) {
-	Parsing__ctx* ctx2    = Parsing__Ctx__new(ctx->filename, ctx->icontent->s);
-	ctx2->lineNbr         = ctx->lineNbr;
-	ctx2->columnNbr       = ctx->columnNbr;
-	ctx2->icontent->index = ctx->icontent->index;
-	return ctx2;
+str* ubyt__toStr(ubyt e) {
+	return ulng__toStr(e); //shortcut for here, but it must be defined completely in final version
 }
-void Parsing__ctx__printLineIndicator(Parsing__ctx* ctx, ubyt level) { //level='\xff' (disabled)
-	Log__printLF(Parsing__ctx__toStr(ctx), true, level);
-	str* content = ctx->icontent->s;
+str* ushr__toStr(ushr e) {
+	return ulng__toStr(e); //shortcut for here, but it must be defined completely in final version
+}
+str* uint__toStr(uint e) {
+	return ulng__toStr(e); //shortcut for here, but it must be defined completely in final version
+}
+//str* ptr__toStr(ptr e) {
+//	return ulng__toStr(e); //shortcut for here, but it must be defined in HEX in final version
+//}
+/*str* tab__toStr(tab* e, ulng depth) { //default generation
+	str* result = Str__new(0ULL);
+	str* BEGINNING = ctxt__toStr("tab{");
+	result = str__addSelf(result, BEGINNING);
+	str__free(BEGINNING);
 
-	//set beginning & end of line
-	ulng begIndex, endIndex;
-	if(ctx->icontent->index == -1LL){ begIndex = 0ULL; endIndex = 0ULL; } //invalid value (istr starting index)
-	else {
-		begIndex = ctx->icontent->index - (ctx->columnNbr-1LL);
-		endIndex = ctx->icontent->index;
-	}
-	if(begIndex > endIndex) { begIndex = 0ULL; } //that mean we are in the first line (cannot subtract columnNbr)
-
-	//read to get real end of line
-	while(endIndex < content->length){
-		if(str__index(content, endIndex) == '\n') { break; }
-		endIndex++;
+	//first spacing
+	boo hasDepth = (depth != -1LL);
+	str* depthSpace = NULL;
+	if(hasDepth) {
+		depthSpace = Str__new(depth);
+		str__fill(depthSpace, '\t');
+		result = str__addChrSelf(result, '\n');
 	}
 
-	//print full line
-	str* rawConcernedLine = str__sub(content, begIndex, endIndex);
-	str* concernedLine    = str__expandTabs(rawConcernedLine, Term__TAB_LENGTH);
-	Log__print(concernedLine, true, level);
-	str__free(concernedLine);
+	//field1 : length
+	if(hasDepth) {
+		result = str__addSelf(result, depthSpace);
+		result = str__addChrSelf(result, '\t');
+	}
+	str* FIELD1 = ctxt__toStr("length:");
+	result = str__addSelf(result, FIELD1);
+	str__free(FIELD1);
+	fieldValue = ulng__toStr(e->length);
+	result = str__addSelf(result, fieldValue)
+	str__free(fieldValue);
+	result = str__addChrSelf(result, ',');
 
-	//prepare position indicator
-	ulng realColumnNbr     = (Term__TAB_LENGTH-1LL)*str__countChr(rawConcernedLine, '\t') + ctx->columnNbr;
-	str__free(rawConcernedLine);
-	ulng positionIndex     =  realColumnNbr - 1LL;
-	str* positionIndicator = Str__new(realColumnNbr);
-	for(ulng i=0ULL; i < positionIndex; i++) { str__indexAssign(positionIndicator, i, '-'); }
-	str__indexAssign(positionIndicator, positionIndex, '^');
+	//field2 : data
+	if(hasDepth) {
+		result = str__addChrSelf(result, '\n');
+		result = str__addSelf(result, depthSpace);
+		result = str__addChrSelf(result, '\t');
+	}
+	str* FIELD2 = ctxt__toStr("data:");
+	result = str__addSelf(result, FIELD2);
+	str__free(FIELD2);
+	fieldValue = ulng__toStr(e->data); //ptr__toStr() should be called
+	result = str__addSelf(result, fieldValue)
+	str__free(fieldValue);
 
-	//print position indicator
-	Log__printLF(positionIndicator, true, level);
-	str__free(positionIndicator);
+	//last spacing
+	if(hasDepth) {
+		result = str__addChrSelf(result, '\n');
+		result = str__addSelf(result, depthSpace);
+	}
+	result = str__addChrSelf(result, '}');
+	return result;
+}*/
+str* tab__toStr(tab* e) { //default generation
+	
 }
-#ifdef DEBUG_AVAILABLE
-void Parsing__ctx__debug(Parsing__ctx* ctx, chr* msg){ //str* msg){ //use of chr* is a tmp shortcut
-	Log__ctxt__debugLF("", true);
-	Parsing__ctx__printLineIndicator(ctx, Log__LEVEL__DEBUG);
-	Log__ctxt__debugLF(msg, true);
+str* lst__toStr(lst* e) { //
+	
 }
-//TEMPORARY
-void Parsing__ctx__debug_WITHOUT_LF(Parsing__ctx* ctx, chr* msg){ //str* msg){ //use of chr* is a tmp shortcut
-	Log__ctxt__debugLF("", true);
-	Parsing__ctx__printLineIndicator(ctx, Log__LEVEL__DEBUG);
-	Log__ctxt__debug(msg, true);
+str* Parsing__ctx__toStr(Parsing__ctx* e) {
+	
+}
+
+//str* str.toStr(str* e) { //default generation
+	
+//}
+str* str.toStr(str* e) { //stdz override
+	
+}
+str* atm.toStr(atm* e) { //special generation for atoms
 }
 #endif
