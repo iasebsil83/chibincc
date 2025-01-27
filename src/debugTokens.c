@@ -1,11 +1,6 @@
 // ---------------- SPECIFIC TOOLS ----------------
 
 //conversions
-const 
-str* genericDisplay(str* name, lst* fieldNames) {
-	
-}
-
 str* Dcpy__toStr(Dcpy* c, ulng depth) {
 	str* DCPY_TEXT    = ctxt__toStr("Dcpy{\n");
 	str* NAME_TEXT    = ctxt__toStr("name:    ");
@@ -141,8 +136,10 @@ str* Xif__toStr(Xif* i, ulng depth) {
 	return result;
 }
 str* Xfor__toStr(Xfor* f, ulng depth) {
+	return ctxt__toStr("");
 }
 str* Xwhile__toStr(Xwhile*, ulng depth) {
+	return ctxt__toStr();
 }
 str* Xswitch__toStr(Xswitch* s, ulng depth) {
 }
