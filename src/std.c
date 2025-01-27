@@ -13,6 +13,12 @@
 
 // ---------------- ROOTS ----------------
 
+//precompiler/compiler options
+#define GENERATE_TOSTR
+#define DEBUG_AVAILABLE
+#define INTERNAL_ERRORS
+#define LOG_FILEPATH
+
 //shortcut notations for types
 typedef char      byt;
 typedef short     shr;
@@ -544,9 +550,8 @@ boo Oiam__chr_str(chr a, str* b) {
 //   - Types declared via type-copy does NOT generate a toStr() method (=> only root primitives + structures concerned)
 //   - A second parameter "ulng depth=0xff..." (-1LL) is set in every method (as for every block, the compiler will get rid of unused parameters at compile time).
 //   - These generated methods are overridable (if user defines one, it is used as is instead of being generated).
-#define GENERATE_TOSTR
 #ifdef  GENERATE_TOSTR
-str* atm__toStr(atm* e, ulng depth); //special generation for atoms : at end of code
+//str* atm__toStr(atm* e, ulng depth); //special generation for atoms : at end of code
 str* ulng__toStr(ulng e) {
 	str* result;
 
@@ -1488,9 +1493,6 @@ void dmb__flush(dmb* d) {
 // ---------------- ERRORS / LOGS ----------------
 
 //definitions
-#define DEBUG_AVAILABLE
-#define INTERNAL_ERRORS
-#define LOG_FILEPATH
 const ubyt Err__SUCCESS  = '\x00';
 const ubyt Err__FAILURE  = '\x01';
 const ubyt Err__CONTINUE = Err__SUCCESS;

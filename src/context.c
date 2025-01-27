@@ -460,17 +460,52 @@ typedef struct {
 } Dfunction;
 
 //type-related generated content : atoms
-const uint ATOM__call = 22;
-const uint ATOM__token = 23;
-atm* call__toAtm(call* e) {
+const uint ATOM__Xif = 24;
+const uint ATOM__Xfor = 25;
+const uint ATOM__Xwhile = 26;
+const uint ATOM__Xswitch = 27;
+const uint ATOM__Dcpy = 28;
+const uint ATOM__Dstc = 29;
+const uint ATOM__Dfunction = 30;
+atm* Xif__toAtm(Xif* e) {
 	atm* a  = malloc(sizeof(atm));
-	a->id   = ATOM__call;
+	a->id   = ATOM__Xif;
 	a->data = (ptr)e;
 	return a;
 }
-atm* token__toAtm(token* e) {
+atm* Xfor__toAtm(Xfor* e) {
 	atm* a  = malloc(sizeof(atm));
-	a->id   = ATOM__token;
+	a->id   = ATOM__Xfor;
+	a->data = (ptr)e;
+	return a;
+}
+atm* Xwhile__toAtm(Xwhile* e) {
+	atm* a  = malloc(sizeof(atm));
+	a->id   = ATOM__Xwhile;
+	a->data = (ptr)e;
+	return a;
+}
+atm* Xswitch__toAtm(Xswitch* e) {
+	atm* a  = malloc(sizeof(atm));
+	a->id   = ATOM__Xswitch;
+	a->data = (ptr)e;
+	return a;
+}
+atm* Dcpy__toAtm(Dcpy* e) {
+	atm* a  = malloc(sizeof(atm));
+	a->id   = ATOM__Dcpy;
+	a->data = (ptr)e;
+	return a;
+}
+atm* Dstc__toAtm(Dstc* e) {
+	atm* a  = malloc(sizeof(atm));
+	a->id   = ATOM__Dstc;
+	a->data = (ptr)e;
+	return a;
+}
+atm* Dfunction__toAtm(Dfunction* e) {
+	atm* a  = malloc(sizeof(atm));
+	a->id   = ATOM__Dfunction;
 	a->data = (ptr)e;
 	return a;
 }
@@ -512,121 +547,6 @@ str* lst_dataDcl__toStr(lst* e, ulng depth) { //manual override
 	result = str__addChrSelf(result, ']');
 	return result;
 }
-str* call__toStr(call* e, ulng depth) { //default generation
-	str* result = Str__new(0ULL);
-	str* BEGINNING = ctxt__toStr("call{");
-	result = str__addSelf(result, BEGINNING);
-	str__free(BEGINNING);
-
-	//prepare depth spacing
-	boo hasDepth    = (depth != -1LL);
-	str* depthSpace = NULL;
-	if(hasDepth) {
-		depthSpace = Str__new(depth);
-		str__fill(depthSpace, '\t');
-	}
-
-	//field1 : name
-	if(hasDepth) { //spacing
-		result = str__addChrSelf(result, '\n');
-		result = str__addSelf(result, depthSpace);
-		result = str__addChrSelf(result, '\t');
-	}
-	str* FIELD1 = ctxt__toStr("name:"); //name
-	result = str__addSelf(result, FIELD1);
-	str__free(FIELD1);
-	str* fieldValue = str__toStr(e->name); //data
-	result = str__addSelf(result, fieldValue);
-	str__free(fieldValue);
-	result = str__addChrSelf(result, ',');
-
-	//field2 : params
-	if(hasDepth) { //spacing
-		result = str__addChrSelf(result, '\n');
-		result = str__addSelf(result, depthSpace);
-		result = str__addChrSelf(result, '\t');
-	}
-	str* FIELD2 = ctxt__toStr("params:"); //name
-	result = str__addSelf(result, FIELD2);
-	str__free(FIELD2);
-	fieldValue = lst_dataDcl__toStr(e->params, depth+1ULL); //data
-	result = str__addSelf(result, fieldValue);
-	str__free(fieldValue);
-	result = str__addChrSelf(result, ',');
-
-	//last spacing
-	if(hasDepth) {
-		result = str__addChrSelf(result, '\n');
-		result = str__addSelf(result, depthSpace);
-	}
-	result = str__addChrSelf(result, '}');
-	return result;
-}
-str* token__toStr(token* e, ulng depth) { //default generation
-	str* result = Str__new(0ULL);
-	str* BEGINNING = ctxt__toStr("token{");
-	result = str__addSelf(result, BEGINNING);
-	str__free(BEGINNING);
-
-	//prepare depth spacing
-	boo hasDepth    = (depth != -1LL);
-	str* depthSpace = NULL;
-	if(hasDepth) {
-		depthSpace = Str__new(depth);
-		str__fill(depthSpace, '\t');
-	}
-
-	//field1 : id
-	if(hasDepth) { //spacing
-		result = str__addChrSelf(result, '\n');
-		result = str__addSelf(result, depthSpace);
-		result = str__addChrSelf(result, '\t');
-	}
-	str* FIELD1 = ctxt__toStr("id:"); //name
-	result = str__addSelf(result, FIELD1);
-	str__free(FIELD1);
-	str* fieldValue = ubyt__toStr(e->id); //data
-	result = str__addSelf(result, fieldValue);
-	str__free(fieldValue);
-	result = str__addChrSelf(result, ',');
-
-	//field2 : content
-	if(hasDepth) { //spacing
-		result = str__addChrSelf(result, '\n');
-		result = str__addSelf(result, depthSpace);
-		result = str__addChrSelf(result, '\t');
-	}
-	str* FIELD2 = ctxt__toStr("content:"); //name
-	result = str__addSelf(result, FIELD2);
-	str__free(FIELD2);
-	fieldValue = ulng__toStr(e->content); //data
-	result = str__addSelf(result, fieldValue);
-	str__free(fieldValue);
-	result = str__addChrSelf(result, ',');
-
-	//field3 : ctx
-	if(hasDepth) { //spacing
-		result = str__addChrSelf(result, '\n');
-		result = str__addSelf(result, depthSpace);
-		result = str__addChrSelf(result, '\t');
-	}
-	str* FIELD3 = ctxt__toStr("ctx:"); //name
-	result = str__addSelf(result, FIELD3);
-	str__free(FIELD3);
-	fieldValue = Parsing__ctx__toStr(e->ctx, depth+1ULL); //data
-	result = str__addSelf(result, fieldValue);
-	str__free(fieldValue);
-	result = str__addChrSelf(result, ',');
-
-	//last spacing
-	if(hasDepth) {
-		result = str__addChrSelf(result, '\n');
-		result = str__addSelf(result, depthSpace);
-	}
-	result = str__addChrSelf(result, '}');
-	return result;
-}
-
 
 
 //program
@@ -637,6 +557,12 @@ typedef struct {
 	lst* globalAsg; //lst[call]
 	lst* functions; //lst[Dfunction]
 } program;
+atm* program__toAtm(program* e) {
+	atm* a  = malloc(sizeof(atm));
+	a->id   = ATOM__program;
+	a->data = (ptr)e;
+	return a;
+}
 
 
 
