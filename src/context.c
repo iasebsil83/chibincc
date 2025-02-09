@@ -97,154 +97,10 @@ atm* dataDcl__toAtm(dataDcl* e) {
 	return a;
 }
 
-//type-related generated content : toStr
-str* dataItem__toStr(dataItem* e, ulng depth) { //default generation
-	str* result = Str__new(0ULL);
-	str* BEGINNING = ctxt__toStr("dataItem{");
-	result = str__addSelf(result, BEGINNING);
-	str__free(BEGINNING);
-
-	//prepare depth spacing
-	boo hasDepth    = (depth != -1LL);
-	str* depthSpace = NULL;
-	if(hasDepth) {
-		depthSpace = Str__new(depth);
-		str__fill(depthSpace, '\t');
-	}
-
-	//field1 : type
-	if(hasDepth) { //spacing
-		result = str__addChrSelf(result, '\n');
-		result = str__addSelf(result, depthSpace);
-		result = str__addChrSelf(result, '\t');
-	}
-	str* FIELD1 = ctxt__toStr("type:"); //name
-	result = str__addSelf(result, FIELD1);
-	str__free(FIELD1);
-	str* fieldValue = str__toStr(e->type); //data
-	result = str__addSelf(result, fieldValue);
-	str__free(fieldValue);
-	result = str__addChrSelf(result, ',');
-
-	//field2 : name
-	if(hasDepth) { //spacing
-		result = str__addChrSelf(result, '\n');
-		result = str__addSelf(result, depthSpace);
-		result = str__addChrSelf(result, '\t');
-	}
-	str* FIELD2 = ctxt__toStr("name:"); //name
-	result = str__addSelf(result, FIELD2);
-	str__free(FIELD2);
-	fieldValue = str__toStr(e->name); //data
-	result = str__addSelf(result, fieldValue);
-	str__free(fieldValue);
-	result = str__addChrSelf(result, ',');
-
-	//field3 : value
-	if(hasDepth) { //spacing
-		result = str__addChrSelf(result, '\n');
-		result = str__addSelf(result, depthSpace);
-		result = str__addChrSelf(result, '\t');
-	}
-	str* FIELD3 = ctxt__toStr("value:"); //name
-	result = str__addSelf(result, FIELD3);
-	str__free(FIELD3);
-	fieldValue = ulng__toStr(e->value); //data
-	result = str__addSelf(result, fieldValue);
-	str__free(fieldValue);
-	result = str__addChrSelf(result, ',');
-
-	//field4 : global
-	if(hasDepth) { //spacing
-		result = str__addChrSelf(result, '\n');
-		result = str__addSelf(result, depthSpace);
-		result = str__addChrSelf(result, '\t');
-	}
-	str* FIELD4 = ctxt__toStr("global:"); //name
-	result = str__addSelf(result, FIELD4);
-	str__free(FIELD4);
-	fieldValue = boo__toStr(e->global); //data
-	result = str__addSelf(result, fieldValue);
-	str__free(fieldValue);
-
-	//field5 : offset
-	if(hasDepth) { //spacing
-		result = str__addChrSelf(result, '\n');
-		result = str__addSelf(result, depthSpace);
-		result = str__addChrSelf(result, '\t');
-	}
-	str* FIELD5 = ctxt__toStr("offset:"); //name
-	result = str__addSelf(result, FIELD5);
-	str__free(FIELD5);
-	fieldValue = ulng__toStr(e->offset); //data
-	result = str__addSelf(result, fieldValue);
-	str__free(fieldValue);
-
-	//last spacing
-	if(hasDepth) {
-		result = str__addChrSelf(result, '\n');
-		result = str__addSelf(result, depthSpace);
-	}
-	result = str__addChrSelf(result, '}');
-	return result;
-}
-str* dataDcl__toStr(dataDcl* e, ulng depth) { //default generation
-	str* result = Str__new(0ULL);
-	str* BEGINNING = ctxt__toStr("dataDcl{");
-	result = str__addSelf(result, BEGINNING);
-	str__free(BEGINNING);
-
-	//prepare depth spacing
-	boo hasDepth    = (depth != -1LL);
-	str* depthSpace = NULL;
-	if(hasDepth) {
-		depthSpace = Str__new(depth);
-		str__fill(depthSpace, '\t');
-	}
-
-	//field1 : type
-	if(hasDepth) { //spacing
-		result = str__addChrSelf(result, '\n');
-		result = str__addSelf(result, depthSpace);
-		result = str__addChrSelf(result, '\t');
-	}
-	str* FIELD1 = ctxt__toStr("type:"); //name
-	result = str__addSelf(result, FIELD1);
-	str__free(FIELD1);
-	str* fieldValue = str__toStr(e->type); //data
-	result = str__addSelf(result, fieldValue);
-	str__free(fieldValue);
-	result = str__addChrSelf(result, ',');
-
-	//field2 : name
-	if(hasDepth) { //spacing
-		result = str__addChrSelf(result, '\n');
-		result = str__addSelf(result, depthSpace);
-		result = str__addChrSelf(result, '\t');
-	}
-	str* FIELD2 = ctxt__toStr("name:"); //name
-	result = str__addSelf(result, FIELD2);
-	str__free(FIELD2);
-	fieldValue = str__toStr(e->name); //data
-	result = str__addSelf(result, fieldValue);
-	str__free(fieldValue);
-	result = str__addChrSelf(result, ',');
-
-	//last spacing
-	if(hasDepth) {
-		result = str__addChrSelf(result, '\n');
-		result = str__addSelf(result, depthSpace);
-	}
-	result = str__addChrSelf(result, '}');
-	return result;
-}
-
-
-
 //global data structures
 typedef struct {
 	str* name;
-	lst* params; //lst[dataDcl]
+	lst* params; //lst[atm]
 } call;
 typedef struct {
 	ubyt          id;
@@ -268,182 +124,30 @@ atm* token__toAtm(token* e) {
 	return a;
 }
 
-//type-related generated content : toStr
-str* lst_dataDcl__toStr(lst* e, ulng depth) { //manual override
-	str* result = ctxt__toStr("[");
-
-	//prepare depth spacing
-	boo hasDepth    = (depth != -1LL);
-	str* depthSpace = NULL;
-	if(hasDepth) {
-		depthSpace = Str__new(depth);
-		str__fill(depthSpace, '\t');
-	}
-
-	//for each element
-	for(ulng i=0ULL; i < e->length; i++) {
-
-		//spacing
-		if(hasDepth) {
-			result = str__addChrSelf(result, '\n');
-			result = str__addSelf(result, depthSpace);
-			result = str__addChrSelf(result, '\t');
-		}
-
-		//item
-		str* itemValue = dataDcl__toStr((dataDcl*)lst__index(e, i)); //data
-		result = str__addSelf(result, itemValue);
-		str__free(itemValue);
-		result = str__addChrSelf(result, ',');
-	}
-
-	//last spacing
-	if(hasDepth) {
-		result = str__addChrSelf(result, '\n');
-		result = str__addSelf(result, depthSpace);
-	}
-	result = str__addChrSelf(result, ']');
-	return result;
-}
-str* call__toStr(call* e, ulng depth) { //default generation
-	str* result = Str__new(0ULL);
-	str* BEGINNING = ctxt__toStr("call{");
-	result = str__addSelf(result, BEGINNING);
-	str__free(BEGINNING);
-
-	//prepare depth spacing
-	boo hasDepth    = (depth != -1LL);
-	str* depthSpace = NULL;
-	if(hasDepth) {
-		depthSpace = Str__new(depth);
-		str__fill(depthSpace, '\t');
-	}
-
-	//field1 : name
-	if(hasDepth) { //spacing
-		result = str__addChrSelf(result, '\n');
-		result = str__addSelf(result, depthSpace);
-		result = str__addChrSelf(result, '\t');
-	}
-	str* FIELD1 = ctxt__toStr("name:"); //name
-	result = str__addSelf(result, FIELD1);
-	str__free(FIELD1);
-	str* fieldValue = str__toStr(e->name); //data
-	result = str__addSelf(result, fieldValue);
-	str__free(fieldValue);
-	result = str__addChrSelf(result, ',');
-
-	//field2 : params
-	if(hasDepth) { //spacing
-		result = str__addChrSelf(result, '\n');
-		result = str__addSelf(result, depthSpace);
-		result = str__addChrSelf(result, '\t');
-	}
-	str* FIELD2 = ctxt__toStr("params:"); //name
-	result = str__addSelf(result, FIELD2);
-	str__free(FIELD2);
-	fieldValue = lst_dataDcl__toStr(e->params, depth+1ULL); //data
-	result = str__addSelf(result, fieldValue);
-	str__free(fieldValue);
-	result = str__addChrSelf(result, ',');
-
-	//last spacing
-	if(hasDepth) {
-		result = str__addChrSelf(result, '\n');
-		result = str__addSelf(result, depthSpace);
-	}
-	result = str__addChrSelf(result, '}');
-	return result;
-}
-str* token__toStr(token* e, ulng depth) { //default generation
-	str* result = Str__new(0ULL);
-	str* BEGINNING = ctxt__toStr("token{");
-	result = str__addSelf(result, BEGINNING);
-	str__free(BEGINNING);
-
-	//prepare depth spacing
-	boo hasDepth    = (depth != -1LL);
-	str* depthSpace = NULL;
-	if(hasDepth) {
-		depthSpace = Str__new(depth);
-		str__fill(depthSpace, '\t');
-	}
-
-	//field1 : id
-	if(hasDepth) { //spacing
-		result = str__addChrSelf(result, '\n');
-		result = str__addSelf(result, depthSpace);
-		result = str__addChrSelf(result, '\t');
-	}
-	str* FIELD1 = ctxt__toStr("id:"); //name
-	result = str__addSelf(result, FIELD1);
-	str__free(FIELD1);
-	str* fieldValue = ubyt__toStr(e->id); //data
-	result = str__addSelf(result, fieldValue);
-	str__free(fieldValue);
-	result = str__addChrSelf(result, ',');
-
-	//field2 : content
-	if(hasDepth) { //spacing
-		result = str__addChrSelf(result, '\n');
-		result = str__addSelf(result, depthSpace);
-		result = str__addChrSelf(result, '\t');
-	}
-	str* FIELD2 = ctxt__toStr("content:"); //name
-	result = str__addSelf(result, FIELD2);
-	str__free(FIELD2);
-	fieldValue = ulng__toStr(e->content); //data
-	result = str__addSelf(result, fieldValue);
-	str__free(fieldValue);
-	result = str__addChrSelf(result, ',');
-
-	//field3 : ctx
-	if(hasDepth) { //spacing
-		result = str__addChrSelf(result, '\n');
-		result = str__addSelf(result, depthSpace);
-		result = str__addChrSelf(result, '\t');
-	}
-	str* FIELD3 = ctxt__toStr("ctx:"); //name
-	result = str__addSelf(result, FIELD3);
-	str__free(FIELD3);
-	fieldValue = Parsing__ctx__toStr(e->ctx, depth+1ULL); //data
-	result = str__addSelf(result, fieldValue);
-	str__free(fieldValue);
-	result = str__addChrSelf(result, ',');
-
-	//last spacing
-	if(hasDepth) {
-		result = str__addChrSelf(result, '\n');
-		result = str__addSelf(result, depthSpace);
-	}
-	result = str__addChrSelf(result, '}');
-	return result;
-}
-
 
 
 //specific data structures
 typedef struct {
-	value* condition;
-	lst*   block;      //lst[token]
-	lst*   elifBlocks; //lst[lst[token]], can be empty
-	lst*   elseBlock;  //lst[token], can be NULL
+	atm* condition;
+	lst* block;      //lst[atm]
+	lst* elifBlocks; //lst[lst[atm]], can be empty
+	lst* elseBlock;  //lst[atm], can be NULL
 } Xif;
 typedef struct {
 	dataItem* iterVar;
-	value*    iterVarInitValue;
-	value*    iterCondition;
-	value*    iterOperation;
-	lst*      block; //lst[token]
+	atm*      iterVarInitValue;
+	atm*      iterCondition;
+	atm*      iterOperation;
+	lst*      block; //lst[atm]
 } Xfor;
 typedef struct {
-	value* condition;
-	value* block;
+	atm* condition;
+	lst* block; //lst[atm]
 } Xwhile;
 typedef struct {
-	value* condition;
-	lst*   keys;   //lst[value]
-	lst*   blocks; //lst[value]
+	atm* condition;
+	lst* keys;   //lst[atm]
+	lst* blocks; //lst[atm]
 } Xswitch;
 typedef struct {
 	str* srcType;
@@ -510,77 +214,31 @@ atm* Dfunction__toAtm(Dfunction* e) {
 	return a;
 }
 
-//type-related generated content : toStr
-str* lst_dataDcl__toStr(lst* e, ulng depth) { //manual override
-	str* result = ctxt__toStr("[");
-
-	//prepare depth spacing
-	boo hasDepth    = (depth != -1LL);
-	str* depthSpace = NULL;
-	if(hasDepth) {
-		depthSpace = Str__new(depth);
-		str__fill(depthSpace, '\t');
-	}
-
-	//for each element
-	for(ulng i=0ULL; i < e->length; i++) {
-
-		//spacing
-		if(hasDepth) {
-			result = str__addChrSelf(result, '\n');
-			result = str__addSelf(result, depthSpace);
-			result = str__addChrSelf(result, '\t');
-		}
-
-		//item
-		str* itemValue = dataDcl__toStr((dataDcl*)lst__index(e, i)); //data
-		result = str__addSelf(result, itemValue);
-		str__free(itemValue);
-		result = str__addChrSelf(result, ',');
-	}
-
-	//last spacing
-	if(hasDepth) {
-		result = str__addChrSelf(result, '\n');
-		result = str__addSelf(result, depthSpace);
-	}
-	result = str__addChrSelf(result, ']');
-	return result;
-}
-
-
 //program
 typedef struct {
-	lst* cpyTypes;  //lst[Dcpy]
-	lst* stcTypes;  //lst[Dstc]
+	ubyt* parentType;
+	str*  name;
+	boo   primitive;
+	atm*  data;
+} type;
+const uint ATOM__type = 31;
+atm* type__toAtm(program* e) {
+	atm* a  = malloc(sizeof(atm));
+	a->id   = ATOM__type;
+	a->data = (ptr)e;
+	return a;
+}
+
+typedef struct {
+	lst* types;     //lst[type]
 	lst* globalDat; //lst[dataItem]
 	lst* globalAsg; //lst[call]
 	lst* functions; //lst[Dfunction]
 } program;
+const uint ATOM__program = 32;
 atm* program__toAtm(program* e) {
 	atm* a  = malloc(sizeof(atm));
 	a->id   = ATOM__program;
 	a->data = (ptr)e;
 	return a;
-}
-
-
-
-
-
-
-// ---------------- TOOLS ----------------
-
-//token
-token* Token__new(Parsing__ctx* ctx, ubyt id) { //DON'T INSTANCIATE BODY !
-	token* t = malloc(sizeof(token));
-	t->id    = id;
-	t->ctx   = Parsing__ctx__copy(ctx);
-	t->body  = NULL;
-	return t;
-}
-void token__free(token* t) {
-	if(t->body != NULL) { lst__free(t->body, false); }
-	Parsing__ctx__free(t->ctx);
-	free(t);
 }
