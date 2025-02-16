@@ -11,8 +11,8 @@
 // ---------------- SPECIFIC ----------------
 
 //cyclic calls
-lst* Tokenization__tokenize(         Parsing__ctx* ctx, boo inSubContent);
-lst* Value__readWholeInstructionBody(Parsing__ctx* ctx, boo inCall      );
+atm* NC__parseOne(                   Parsing__ctx* ctx,            boo inCall);
+void Value__readWholeInstructionBody(Parsing__ctx* ctx, lst* body, boo inCall);
 
 //numbers
 void Value__parseByte_error(Parsing__ctx* ctx){ Parsing__ctx__errorLF(ctx, ctxt__toStr("Not enough character to parse ubyt (2 hex required after '1' delimiter).")); }
@@ -176,7 +176,7 @@ atm* Value__parseLong(Parsing__ctx* ctx) {
 	//debug
 	#ifdef DEBUG_AVAILABLE
 	Parsing__ctx__debug_WITHOUT_LF(ctx, "VALUE PARSED LONG");
-	if(Log__LEVEL__DEBUG >= Log__level) { printf("[%016llx]\n", result); } //TEMPORARY FOR printf USE
+	if(Log__LEVEL__DEBUG >= Log__level) { printf("[%016llx]\n", literal); } //TEMPORARY FOR printf USE
 	#endif
 
 	//return as atm
@@ -201,7 +201,7 @@ atm* Value__parseSubcontent(Parsing__ctx* ctx) {
 	}
 
 	//return as atm
-	return lst__toAtm(subcontent);
+	return lst_atm__toAtm(subcontent);
 }
 
 
@@ -217,8 +217,8 @@ atm* Value__parseCall(Parsing__ctx* ctx, str* name) {
 	#ifdef DEBUG_AVAILABLE
 	Parsing__ctx__debug_WITHOUT_LF(ctx, "CALL NAME IS \"");
 	//paliative for the moment. previous debug call should contain this <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-	Log__debug(name, false);
-	Log__ctxt__debugLF("\"", false);
+	Log__debug(name, false, __FILE__);
+	Log__ctxt__debugLF("\"", false, __FILE__);
 	#endif
 
 	//return as atm
@@ -270,8 +270,8 @@ boo Value__parseName(Parsing__ctx* ctx, lst* body, boo inCall) {
 				#ifdef DEBUG_AVAILABLE
 				Parsing__ctx__debug_WITHOUT_LF(ctx, "NAME IS \"");
 				//paliative for the moment. previous debug call should contain this <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-				Log__debug((str*)(atmResult->data), false);
-				Log__ctxt__debugLF("\"", false);
+				Log__debug((str*)(atmResult->data), false, __FILE__);
+				Log__ctxt__debugLF("\"", false, __FILE__);
 				#endif
 
 				//continue the right way (return)
@@ -292,8 +292,8 @@ boo Value__parseName(Parsing__ctx* ctx, lst* body, boo inCall) {
 				#ifdef DEBUG_AVAILABLE
 				Parsing__ctx__debug_WITHOUT_LF(ctx, "NAME IS \"");
 				//paliative for the moment. previous debug call should contain this <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-				Log__debug((str*)(atmResult->data), false);
-				Log__ctxt__debugLF("\"", false);
+				Log__debug((str*)(atmResult->data), false, __FILE__);
+				Log__ctxt__debugLF("\"", false, __FILE__);
 				#endif
 
 				//continue parsing the right way (parseSubcontent, return)
@@ -331,8 +331,8 @@ boo Value__parseName(Parsing__ctx* ctx, lst* body, boo inCall) {
 				#ifdef DEBUG_AVAILABLE
 				Parsing__ctx__debug_WITHOUT_LF(ctx, "NAME IS \"");
 				//paliative for the moment. previous debug call should contain this <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-				Log__debug((str*)(atmResult->data), false);
-				Log__ctxt__debugLF("\"", false);
+				Log__debug((str*)(atmResult->data), false, __FILE__);
+				Log__ctxt__debugLF("\"", false, __FILE__);
 				#endif
 
 				//continue parsing the right way
@@ -384,9 +384,10 @@ void Value__readWholeInstructionBody(Parsing__ctx* ctx, lst* body, boo inCall) {
 	while(true) {
 
 		//read next useful character
+		chr c;
 		while(true) {
 			if(Parsing__ctx__inc(ctx)) { return; } //no more value to read
-			chr c = Parsing__ctx__get(ctx);
+			c = Parsing__ctx__get(ctx);
 
 			//skip line feeds ONLY IF IN CALL
 			if(inCall && c == '\n') { continue; }

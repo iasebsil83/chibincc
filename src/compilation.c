@@ -1,7 +1,7 @@
 // ---------------- DEPENDENCIES ----------------
 
 //compilation steps
-#include "tokenization.c"
+#include "nc_parse.c"
 #include "asm.c"
 #include "obj.c"
 
@@ -17,14 +17,14 @@ str* compileIntoASM(str* inputPath, tab* includeDirs, str* outputPath) { //outpu
 
 	//debug <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< into one call
 	#ifdef DEBUG_AVAILABLE
-	Log__ctxt__debugLF("Compiling into ASM {", true);
-	Log__ctxt__debug("\tinputPath[", true);
-	Log__debug(inputPath, false);
-	Log__ctxt__debugLF("]", false);
-	Log__ctxt__debug("\tincludeDirs[", true);
-	for(ulng i=0UL; i < includeDirs->length; i++) { Log__debug(tab_str__index(includeDirs, i), false); Log__ctxt__debug(", ", false); }
-	Log__ctxt__debugLF("]", false);
-	Log__ctxt__debugLF("}", true);
+	Log__ctxt__debugLF("Compiling into ASM {", true, __FILE__);
+	Log__ctxt__debug("\tinputPath[", true, __FILE__);
+	Log__debug(inputPath, false, __FILE__);
+	Log__ctxt__debugLF("]", false, __FILE__);
+	Log__ctxt__debug("\tincludeDirs[", true, __FILE__);
+	for(ulng i=0UL; i < includeDirs->length; i++) { Log__debug(tab_str__index(includeDirs, i), false, __FILE__); Log__ctxt__debug(", ", false, __FILE__); }
+	Log__ctxt__debugLF("]", false, __FILE__);
+	Log__ctxt__debugLF("}", true, __FILE__);
 	#endif
 
 	//read given file
@@ -47,19 +47,19 @@ str* compileIntoOBJ(str* inputPath, tab* includeDirs, tab* SDLDeps, boo usePIC, 
 
 	//debug <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< into one call
 	#ifdef DEBUG_AVAILABLE
-	Log__ctxt__debugLF("Compiling into OBJ {", true);
-	Log__ctxt__debug("\tinputPath[", true);
-	Log__debug(inputPath, false);
-	Log__ctxt__debugLF("]", false);
-	Log__ctxt__debug("\tincludeDirs[", true);
-	for(ulng i=0UL; i < includeDirs->length; i++) { Log__debug(tab_str__index(includeDirs, i), false); Log__ctxt__debug(", ", false); }
-	Log__ctxt__debugLF("]", false);
-	Log__ctxt__debug("\tSDLDeps[", true);
-	for(ulng i=0UL; i < SDLDeps->length; i++) { Log__debug(tab_str__index(SDLDeps, i), false); Log__ctxt__debug(", ", false); }
-	Log__ctxt__debugLF("]", false);
-	if(usePIC) { Log__ctxt__debugLF("\tusePIC[true]", true);  }
-	else       { Log__ctxt__debugLF("\tusePIC[false]", true); }
-	Log__ctxt__debugLF("}", true);
+	Log__ctxt__debugLF("Compiling into OBJ {", true, __FILE__);
+	Log__ctxt__debug("\tinputPath[", true, __FILE__);
+	Log__debug(inputPath, false, __FILE__);
+	Log__ctxt__debugLF("]", false, __FILE__);
+	Log__ctxt__debug("\tincludeDirs[", true, __FILE__);
+	for(ulng i=0UL; i < includeDirs->length; i++) { Log__debug(tab_str__index(includeDirs, i), false, __FILE__); Log__ctxt__debug(", ", false, __FILE__); }
+	Log__ctxt__debugLF("]", false, __FILE__);
+	Log__ctxt__debug("\tSDLDeps[", true, __FILE__);
+	for(ulng i=0UL; i < SDLDeps->length; i++) { Log__debug(tab_str__index(SDLDeps, i), false, __FILE__); Log__ctxt__debug(", ", false, __FILE__); }
+	Log__ctxt__debugLF("]", false, __FILE__);
+	if(usePIC) { Log__ctxt__debugLF("\tusePIC[true]", true, __FILE__);  }
+	else       { Log__ctxt__debugLF("\tusePIC[false]", true, __FILE__); }
+	Log__ctxt__debugLF("}", true, __FILE__);
 	#endif
 
 	//compile into ASM first

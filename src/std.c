@@ -121,7 +121,7 @@ atm* ulng__toAtm(ulng e) {
 	a->data = (ptr)e;
 	return a;
 }
-atm* flt__toAtm(flt e) {
+/*atm* flt__toAtm(flt e) {
 	atm* a  = malloc(sizeof(atm));
 	a->id   = ATOM__flt;
 	a->data = (ptr)e;
@@ -132,7 +132,7 @@ atm* dbl__toAtm(dbl e) {
 	a->id   = ATOM__dbl;
 	a->data = (ptr)e;
 	return a;
-}
+}*/
 atm* boo__toAtm(boo e) {
 	atm* a  = malloc(sizeof(atm));
 	a->id   = ATOM__boo;
@@ -543,6 +543,12 @@ boo Oiam__chr_str(chr a, str* b) {
 
 // ---------------- GENERATED AT COMPILE TIME : toStr ----------------
 
+//unsigned -> str
+chr ubyt__lastHexDigit(ubyt u) {
+	if(u < '\x0a') { return '0' + u; }
+	return 'a' + u - '\x0a';
+}
+
 //toStr
 // This part is not obvious, here are some rules/principles to know about toStr method generation :
 //   - A compilation option enables or not those method generation.
@@ -556,7 +562,7 @@ str* ulng__toStr(ulng e) {
 	str* result;
 
 	//separate digits
-	ulng rest          = u;
+	ulng rest          = e;
 	ulng tenPowJ_digit = rest / 10000000000000000000ULL;
 	rest -= 10000000000000000000ULL * tenPowJ_digit;
 
@@ -1157,7 +1163,7 @@ str* lst_str__toStr(lst* e, ulng depth) {
 	}
 
 	//for each element
-	for(ulng i=0ULL; i < e->length; i++) {
+	for(ulng i=0ULL; i < lst__length(e); i++) {
 
 		//spacing
 		if(hasDepth) {
@@ -1711,7 +1717,7 @@ str* opt__toStr(opt* e, ulng depth) { //default generation
 	str* FIELD5 = ctxt__toStr("description:"); //name
 	result = str__addSelf(result, FIELD5);
 	str__free(FIELD5);
-	fieldValue = tab_str__toStr(e->description); //data
+	fieldValue = tab_str__toStr(e->description, depth+1ULL); //data
 	result = str__addSelf(result, fieldValue);
 	str__free(fieldValue);
 
@@ -1755,13 +1761,13 @@ void Arg__detectedOption(opt* o, tab* args, ulng* argIndex) {
 		if(argIndex[0] >= args->length) {
 			Log__errorLF(
 				str__add(str__add(ctxt__toStr("Option '--"), o->long_name), ctxt__toStr("' requires a value (nothing given).")),
-				true, __FILENAME__, Err__FAILURE
+				true, __FILE__, Err__FAILURE
 			);
 		}
 		if(str__index(tab_str__index(args, argIndex[0]),0) == '-') {
 			Log__errorLF(
 				str__add(str__add(ctxt__toStr("Option '--"), o->long_name), ctxt__toStr("' requires a value (another option given).")),
-				true, __FILENAME__, Err__FAILURE
+				true, __FILE__, Err__FAILURE
 			);
 		}
 
@@ -1785,7 +1791,7 @@ void Arg__parse(tab* args, tab* opts) {
 		if(str__index(a,0) == '-'){
 
 			//special case: lonely '-'
-			if(a->length == 1UL) { Log__errorLF(ctxt__toStr("Missing argument name to lonely '-'."), true, __FILENAME__, Err__FAILURE); }
+			if(a->length == 1UL) { Log__errorLF(ctxt__toStr("Missing argument name to lonely '-'."), true, __FILE__, Err__FAILURE); }
 			boo foundMatching = false;
 
 			//long options
@@ -1823,7 +1829,7 @@ void Arg__parse(tab* args, tab* opts) {
 			if(!foundMatching) {
 				Log__errorLF(
 					str__add(str__add( ctxt__toStr("Undefined option '"), a), ctxt__toStr("'.\n")),
-					true, __FILENAME__, Err__FAILURE
+					true, __FILE__, Err__FAILURE
 				);
 			}
 		}
@@ -1942,7 +1948,7 @@ void Path__errorIfNotDir(str* path, byt err) {
 	if(!Path__isDir(path)){
 		Log__errorLF(
 			str__add(str__add(ctxt__toStr("Path '"), path), ctxt__toStr("' is not a directory.")),
-			true, __FILENAME__, err
+			true, __FILE__, err
 		);
 	}
 }
@@ -1950,7 +1956,7 @@ void Path__errorIfNotFile(str* path, byt err) {
 	if(!Path__isFile(path)){
 		Log__errorLF(
 			str__add(str__add(ctxt__toStr("Path '"), path), ctxt__toStr("' is not a file.")),
-			true, __FILENAME__, err
+			true, __FILE__, err
 		);
 	}
 }
@@ -1972,7 +1978,7 @@ ubyt str__toUByt(str* input) {
 	if(input->length < 2ULL) {
 		Log__errorLF(
 			str__add(str__add(ctxt__toStr("String \""), input), ctxt__toStr("\" too short to be converted into UByt (at least 2 characters required).")),
-			true, __FILENAME__, Err__FAILURE
+			true, __FILE__, Err__FAILURE
 		);
 	}
 	ubyt pow1 = chr__fromHexToUByt(str__index(input, 0ULL));
@@ -1983,7 +1989,7 @@ ushr str__toUShr(str* input) {
 	if(input->length < 4ULL) {
 		Log__errorLF(
 			str__add(str__add(ctxt__toStr("String \""), input), ctxt__toStr("\" too short to be converted into UShr (at least 4 characters required).")),
-			true, __FILENAME__, Err__FAILURE
+			true, __FILE__, Err__FAILURE
 		);
 	}
 	ushr pow3 = chr__fromHexToUByt(str__index(input, 0ULL));
@@ -1998,7 +2004,7 @@ uint str__toUInt(str* input) {
 	if(input->length < 8ULL) {
 		Log__errorLF(
 			str__add(str__add(ctxt__toStr("String \""), input), ctxt__toStr("\" too short to be converted into UInt (at least 8 characters required).")),
-			true, __FILENAME__, Err__FAILURE
+			true, __FILE__, Err__FAILURE
 		);
 	}
 	uint pow7 = chr__fromHexToUByt(str__index(input, 0ULL));
@@ -2019,7 +2025,7 @@ ulng str__toULng(str* input) {
 	if(input->length < 16ULL) {
 		Log__errorLF(
 			str__add(str__add(ctxt__toStr("String \""), input), ctxt__toStr("\" too short to be converted into ULng (at least 16 characters are required).")),
-			true, __FILENAME__, Err__FAILURE
+			true, __FILE__, Err__FAILURE
 		);
 	}
 	ulng powF = chr__fromHexToUByt(str__index(input,  0ULL));
@@ -2049,12 +2055,6 @@ ulng str__toULng(str* input) {
 		pow1 <<  4 | pow0;
 }
 
-//unsigned -> str
-chr ubyt__lastHexDigit(ubyt u) {
-	if(u < '\x0a') { return '0' + u; }
-	return 'a' + u - '\x0a';
-}
-
 
 
 
@@ -2081,6 +2081,7 @@ atm* Parsing__ctx__toAtm(Parsing__ctx* e) {
 }
 
 //type-related generated content : toStr
+/*
 str* Parsing__ctx__toStr(Parsing__ctx* e, ulng depth) { //default generation
 	str* result = Str__new(0ULL);
 	str* BEGINNING = ctxt__toStr("Parsing__ctx{");
@@ -2146,7 +2147,7 @@ str* Parsing__ctx__toStr(Parsing__ctx* e, ulng depth) { //default generation
 	str* FIELD4 = ctxt__toStr("icontent:"); //name
 	result = str__addSelf(result, FIELD4);
 	str__free(FIELD4);
-	fieldValue = istr__toStr(e->icontent); //data
+	fieldValue = istr__toStr(e->icontent, depth+1LL); //data
 	result = str__addSelf(result, fieldValue);
 	str__free(fieldValue);
 
@@ -2171,6 +2172,7 @@ str* Parsing__ctx__toStr(Parsing__ctx* e, ulng depth) { //default generation
 	result = str__addChrSelf(result, '}');
 	return result;
 }
+*/
 
 //functions
 Parsing__ctx* Parsing__Ctx__new(str* filename, str* content) {
@@ -2224,7 +2226,7 @@ Parsing__ctx* Parsing__ctx__copy(Parsing__ctx* ctx) {
 	return ctx2;
 }
 void Parsing__ctx__printLineIndicator(Parsing__ctx* ctx, ubyt level) { //level='\xff' (disabled)
-	Log__printLF(Parsing__ctx__toStr(ctx), true, __FILENAME__, level);
+	Log__printLF(Parsing__ctx__toStr(ctx), true, __FILE__, level);
 	str* content = ctx->icontent->s;
 
 	//set beginning & end of line
@@ -2245,7 +2247,7 @@ void Parsing__ctx__printLineIndicator(Parsing__ctx* ctx, ubyt level) { //level='
 	//print full line
 	str* rawConcernedLine = str__sub(content, begIndex, endIndex);
 	str* concernedLine    = str__expandTabs(rawConcernedLine, Term__TAB_LENGTH);
-	Log__print(concernedLine, true, __FILENAME__, level);
+	Log__print(concernedLine, true, __FILE__, level);
 	str__free(concernedLine);
 
 	//prepare position indicator
@@ -2257,27 +2259,27 @@ void Parsing__ctx__printLineIndicator(Parsing__ctx* ctx, ubyt level) { //level='
 	str__indexAssign(positionIndicator, positionIndex, '^');
 
 	//print position indicator
-	Log__printLF(positionIndicator, true, __FILENAME__, level);
+	Log__printLF(positionIndicator, true, __FILE__, level);
 	str__free(positionIndicator);
 }
 #ifdef DEBUG_AVAILABLE
 void Parsing__ctx__debug(Parsing__ctx* ctx, chr* msg){ //str* msg){ //use of chr* is a tmp shortcut
-	Log__ctxt__debugLF("", true, __FILENAME__);
+	Log__ctxt__debugLF("", true, __FILE__);
 	Parsing__ctx__printLineIndicator(ctx, Log__LEVEL__DEBUG);
-	Log__ctxt__debugLF(msg, true, __FILENAME__);
+	Log__ctxt__debugLF(msg, true, __FILE__);
 }
 //TEMPORARY <<<<<<<<<<<<<<<<<<<<<<<
 void Parsing__ctx__debug_WITHOUT_LF(Parsing__ctx* ctx, chr* msg){ //str* msg){ //use of chr* is a tmp shortcut
-	Log__ctxt__debugLF("", true, __FILENAME__);
+	Log__ctxt__debugLF("", true, __FILE__);
 	Parsing__ctx__printLineIndicator(ctx, Log__LEVEL__DEBUG);
-	Log__ctxt__debug(msg, true);
+	Log__ctxt__debug(msg, true, __FILE__);
 }//<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 #endif
 void Parsing__ctx__errorLF(Parsing__ctx* ctx, str* s) {
 	Parsing__ctx__printLineIndicator(ctx, Log__LEVEL__ERROR);
-	Log__errorLF(s, true, __FILENAME__, Err__FAILURE);
+	Log__errorLF(s, true, __FILE__, Err__FAILURE);
 }
 void Parsing__ctx__internalLF(Parsing__ctx* ctx, str* s) {
 	Parsing__ctx__printLineIndicator(ctx, Log__LEVEL__INTERR);
-	Log__internalLF(s, true, __FILENAME__);
+	Log__internalLF(s, true, __FILE__);
 }

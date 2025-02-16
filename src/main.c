@@ -150,7 +150,7 @@ byt zmain(tab* args) {
 	str* outputPath = NULL;
 	opt* o          = tab_opt__index(opts, OPTION__OUTPUT);
 	if(opt__enabled(o)) {
-		if(args->length > 1){ Log__errorLF(ctxt__toStr("Cannot have option '-o/--output' with multiple files as input."), true, Err__FAILURE); }
+		if(args->length > 1){ Log__errorLF(ctxt__toStr("Cannot have option '-o/--output' with multiple files as input."), true, __FILE__, Err__FAILURE); }
 		outputPath = o->value;
 	}
 
